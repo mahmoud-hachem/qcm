@@ -1,0 +1,29 @@
+[QUESTION_START]
+ID: 1
+QUESTION: What does JVM stand for?
+OPTION_A: Java Virtual Machine
+OPTION_B: Java Visual Manager
+OPTION_C: Java Variable Method
+OPTION_D: Java Verification Mode
+CORRECT_ANSWER: A
+[QUESTION_END]
+
+[QUESTION_START]
+ID: 2
+QUESTION: Which command compiles a Java file?
+OPTION_A: java
+OPTION_B: javac
+OPTION_C: jvm
+OPTION_D: compile
+CORRECT_ANSWER: B
+[QUESTION_END]
+
+[QUESTION_START]
+ID: 3
+QUESTION: Which keyword creates a subclass in Java?
+OPTION_A: inherits
+OPTION_B: implements
+OPTION_C: extends
+OPTION_D: super
+CORRECT_ANSWER: C
+[QUESTION_END]
