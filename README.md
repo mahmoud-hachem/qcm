@@ -1,50 +1,8 @@
 # QuizFlow
 
-A multi-course MCQ study app. Upload a standardized text-based PDF, preview the parsed questions, then save it as an interactive exam. No AI runs inside the app. Each browser has a separate private workspace.
+QuizFlow turns a ChatGPT-generated, standardized MCQ PDF into an interactive practice exam. PDF reading, scoring, and saving happen in the visitor's browser. The live site needs only static hosting; it has no server or database account.
 
-## Project structure
-
-```text
-qcm/
-├── backend/
-│   ├── main.py           FastAPI routes and scoring
-│   ├── database.py       SQLAlchemy engine and session
-│   ├── models.py         relational database models
-│   ├── parser.py         strict PDF question parser
-│   ├── workspaces.py     anonymous workspace isolation
-│   ├── schemas.py        request validation
-│   └── requirements.txt
-├── frontend/
-│   ├── src/api.js        API calls and error messages
-│   ├── src/App.jsx       pages and reusable UI components
-│   ├── src/styles.css    responsive light theme
-│   └── package.json
-├── MCQ_GENERATION_PROMPT.md   reusable prompt for ChatGPT
-├── Dockerfile            single-service cloud build
-├── DEPLOYMENT.md         hosting and domain setup
-└── sample/
-    ├── sample-mcq.txt    required question format
-    ├── sample-mcq.pdf    ready-to-upload sample PDF
-    └── make_sample_pdf.py
-```
-
-## Run locally on Windows
-
-Open **two PowerShell terminals** in the `qcm` folder.
-
-### Terminal 1: backend
-
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
-```
-
-If PowerShell blocks activation, use `.\.venv\Scripts\python.exe -m pip install -r requirements.txt`, then `.\.venv\Scripts\python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8000`.
-
-### Terminal 2: frontend
+## Run locally
 
 ```powershell
 cd frontend
@@ -52,28 +10,16 @@ npm install
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173/** in your browser. The backend API docs are at **http://127.0.0.1:8000/docs**. Keep both terminals running. SQLite creates `backend/studymcq.db` on first backend startup.
+Open `http://127.0.0.1:5173/`. You do not need to start the old FastAPI backend.
 
-In **Settings**, copy your workspace recovery key before clearing browser data or moving to another device. Anyone with the key can access your courses and results.
+## Try a PDF
 
-## Try the complete flow
+1. Create a course.
+2. Choose **Upload exam**, enter a title, and select `sample/sample-mcq.pdf`.
+3. Review the parsed questions, then save the exam.
+4. Take the exam in Exam or Study Mode and check its result in History.
 
-1. Open **Courses** and create a course, such as `Java`.
-2. Open the course and choose **Create / Upload Exam**.
-3. Enter an exam title and upload `sample/sample-mcq.pdf`.
-4. Review the detected questions and choose **Save exam**.
-5. Start the exam in Exam Mode or Study Mode, answer questions, and submit.
-6. Review the result, retry the exam or wrong questions, and open **History**.
-
-The sample PDF is generated from `sample/sample-mcq.txt`. To regenerate it, run `python sample/make_sample_pdf.py` from the project root after installing backend requirements.
-
-To generate new exams from your own course material, attach the course PDF to ChatGPT and use `MCQ_GENERATION_PROMPT.md`. Always inspect the website's import preview before saving.
-
-For the free-hosting trial with Render, Neon, and a Porkbun domain, follow `DEPLOYMENT.md`. The local app continues to use SQLite unless you set `DATABASE_URL`.
-
-## PDF format
-
-Each question must use this exact set of fields inside markers:
+To generate a PDF from your own course material, use `MCQ_GENERATION_PROMPT.md` with ChatGPT. The PDF must contain selectable text and use the exact question blocks below. A scanned image PDF needs OCR first.
 
 ```text
 [QUESTION_START]
@@ -87,14 +33,12 @@ CORRECT_ANSWER: A
 [QUESTION_END]
 ```
 
-IDs must be positive, unique whole numbers. Correct answers must be `A`, `B`, `C`, or `D`. All fields must contain text. Long question and option values may wrap onto continuation lines after their field label. The PDF must contain selectable text; scanned page images are not supported. Invalid blocks are reported and skipped. A preview with zero valid questions cannot be saved.
+IDs must be unique positive whole numbers. Answers must be A, B, C, or D. Invalid blocks are reported in the import preview and skipped. The app does not generate questions or run AI.
 
-## Configuration
+## Data and privacy
 
-- Backend: `DATABASE_URL` defaults to `sqlite:///./studymcq.db`; `FRONTEND_ORIGIN` defaults to both `localhost:5173` and `127.0.0.1:5173`. Set these environment variables before starting the backend if needed. PostgreSQL is supported through `DATABASE_URL` for deployment.
-- Frontend: copy `frontend/.env.example` to `frontend/.env` to override `VITE_API_URL`. The default is `http://127.0.0.1:8000/api`.
-- App name: change `APP_NAME` in `frontend/src/config.js`.
+Each browser stores its own courses, parsed questions, and results in IndexedDB. PDF bytes are read locally and are not uploaded to a server. Other visitors cannot see this browser's workspace. Another browser or device starts with an empty workspace. Use **Settings → Export backup** and **Import backup** to move or back up your data. Clearing site data can erase it.
 
-## Current limitations
+The existing `backend/` and root `Dockerfile` are from the earlier server-based version and are no longer used by the frontend. Existing local SQLite files are left intact; this browser-only version does not automatically import them.
 
-Anonymous workspaces are tied to a recovery key rather than an account, so key loss means workspace loss. The initial public trial still needs abuse controls before a larger launch. PDF parsing expects selectable text in the specified layout and does not perform OCR. Database tables are created on startup; a mature production service should use migrations and user accounts.
+For Vercel and the Porkbun domain, follow `DEPLOYMENT.md`.

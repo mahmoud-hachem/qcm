@@ -3,7 +3,7 @@ import { Link, NavLink, Route, Routes, useNavigate, useParams, useSearchParams }
 import { ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, CircleHelp, Clock3, FileText, GraduationCap, History, LayoutDashboard, Menu, MoreHorizontal, Plus, Search, Settings, Sparkles, Target, Trash2, UploadCloud, X } from 'lucide-react'
 import { api } from './api'
 import { APP_NAME } from './config'
-import { getWorkspaceKey, restoreWorkspaceKey } from './workspace'
+import SettingsPage from './SettingsPage'
 
 const fmtDate = value => value ? new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not yet'
 const fmtScore = value => value == null ? '—' : `${Number(value).toFixed(0)}%`
@@ -225,20 +225,6 @@ function HistoryPage() {
   if (error) return <ErrorBox message={error} retry={refresh} />
   const visible = data.filter(a => `${a.exam_title} ${a.course_name}`.toLowerCase().includes(query.toLowerCase()))
   return <><Header eyebrow="YOUR PROGRESS" title="Attempt History" description="Look back at every completed practice session." /><div className="list-toolbar"><label className="search-box"><Search size={18} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search attempts" /></label><span className="toolbar-count">{visible.length} attempts</span></div>{visible.length ? <div className="history-list">{visible.map(a => <Link className="history-row" to={`/attempts/${a.id}`} key={a.id}><div className="row-icon mint"><Target size={20} /></div><div className="row-main"><strong>{a.exam_title}</strong><span>{a.course_name} · {fmtDate(a.completed_at)} · {a.mode === 'study' ? 'Study Mode' : 'Exam Mode'}</span></div><div className="history-score"><strong>{fmtScore(a.percentage)}</strong><span>{a.score}/{a.total_questions} correct</span></div><ChevronRight size={18} /></Link>)}</div> : <Empty icon={History} title={query ? 'No matching attempts' : 'No attempts yet'} text={query ? 'Try a different search term.' : 'Complete an exam and your results will appear here.'} />}</>
-}
-
-function SettingsPage() {
-  const [recoveryKey, setRecoveryKey] = useState('')
-  const [message, setMessage] = useState('')
-  async function copyKey() {
-    try { await navigator.clipboard.writeText(getWorkspaceKey()); setMessage('Recovery key copied. Store it somewhere safe.') }
-    catch { setMessage('Clipboard access failed. Try again from a secure browser page.') }
-  }
-  function restore(event) {
-    event.preventDefault()
-    try { restoreWorkspaceKey(recoveryKey) } catch (error) { setMessage(error.message) }
-  }
-  return <><Header eyebrow="PREFERENCES" title="Settings" description="Manage this browser's private study workspace." /><div className="panel settings-panel"><div className="settings-row"><div className="settings-icon"><GraduationCap size={21} /></div><div><h3>Project name</h3><p>Change the name in <code>frontend/src/config.js</code>.</p></div><strong>{APP_NAME}</strong></div><div className="settings-row"><div className="settings-icon"><BookOpen size={21} /></div><div><h3>Private workspace</h3><p>This browser has its own courses and attempts. Save the recovery key before clearing browser data or switching devices. Anyone with the key can access this workspace.</p></div><button className="button secondary compact" onClick={copyKey}>Copy key</button></div><form className="restore-form" onSubmit={restore}><label className="field-label" htmlFor="recovery-key">Restore a workspace</label><div><input id="recovery-key" value={recoveryKey} onChange={event => setRecoveryKey(event.target.value)} placeholder="Paste a 64-character recovery key" /><button className="button secondary" type="submit">Restore</button></div></form>{message && <p className="settings-message">{message}</p>}<div className="settings-row"><div className="settings-icon"><FileText size={21} /></div><div><h3>PDF format</h3><p>Use the standardized question blocks shown in the sample file.</p></div></div></div></>
 }
 
 export default function App() {

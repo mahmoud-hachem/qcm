@@ -1,30 +1,20 @@
-# Free hosting trial: Render + Neon
+# Deploy QuizFlow on Vercel
 
-The root `Dockerfile` builds React and serves it with FastAPI under one domain. PostgreSQL stores courses and attempts outside the web service. The domain remains registered at Porkbun.
+This version is a static Vite site. It needs no Render service, Neon database, API key, or server. PDF parsing and course history run in each visitor's browser. The domain stays registered at Porkbun.
 
-## Accounts needed
+## Deploy
 
-- A free **Neon** account for PostgreSQL.
-- A free **Render** account for the web service.
-- A **GitHub** repository that Render can read. Keep it private if you prefer; Render can connect to private repositories after you authorize it.
+1. Push the `qcm` folder to a GitHub repository.
+2. In Vercel, choose **Add New → Project** and import the GitHub repository.
+3. Set **Root Directory** to `frontend`. Use the **Vite** framework preset. The build command is `npm run build` and the output directory is `dist`. No environment variables are needed.
+4. Deploy. Open the assigned `*.vercel.app` URL and test `sample/sample-mcq.pdf`: create a course, preview and save the exam, complete an attempt, and reload the page to check that the history persists.
+5. In Vercel project **Settings → Domains**, add `mahmoudhachem.dev` (and `www.mahmoudhachem.dev` if desired). Vercel will show the DNS records for this project.
+6. In Porkbun **Domain Management → DNS**, set the exact records Vercel requests. Remove only website DNS records that conflict. Keep any email MX/TXT records you use. Return to Vercel to verify the domain and HTTPS.
 
-No hosting account or DNS change has been made yet.
+The SPA route fallback is in `frontend/vercel.json`, so links to exams and results open correctly after a page reload.
 
-## Deploy the app
+## What visitors should know
 
-1. In Neon, create a free Postgres project. Copy its connection string from the Connect dialog. Keep it secret; it will be the `DATABASE_URL` environment variable in Render. Do not put it in a file or GitHub.
-2. Put the contents of this `qcm` folder in a GitHub repository. `.gitignore` excludes the local SQLite database, virtual environment, and `node_modules`.
-3. In Render, create **New > Web Service**, connect the repository, and select the **Free** instance. Render should detect the root `Dockerfile`. Set the environment variable `DATABASE_URL` to the Neon connection string. Set the health check path to `/api/health` if the form offers that option.
-4. Deploy and open the temporary `*.onrender.com` address. Check that `/api/health` shows `{"status":"ok"}` and that the frontend loads. Test PDF preview, saving, and exam submission before connecting the domain.
-5. In Render's service settings, add `mahmoudhachem.dev` under **Custom Domains**. Render will show the DNS records required for the root domain and `www`. In Porkbun, open **Domain Management > DNS** for the domain. Remove only DNS records that conflict with the new website records, then add Render's exact values. Preserve email-related MX and TXT records if you use email on the domain. Return to Render and verify the domain. Render provides HTTPS automatically.
-6. Upload a real MCQ PDF, inspect the import preview, save the exam, complete an attempt, and verify a second browser gets a separate private workspace.
+Each browser has a separate local study library. There is no account or automatic sync. Visitors can export and import a backup in Settings. Clearing site data can remove their courses and results. The PDF file is read in the browser and is not sent to Vercel; only the app's static files are hosted there.
 
-## Free-tier limits
-
-Render's free web service sleeps after 15 minutes of inactivity, so the first visit can take around a minute. Its filesystem is temporary, which is why this setup uses Neon instead of cloud SQLite. Neon Free has usage and storage limits. This combination is suitable for a first public trial, not guaranteed to stay available under heavy use.
-
-Each browser creates a random recovery key. In **Settings**, copy it before clearing browser data or switching devices. Anyone who has the key can access that workspace. User accounts and abuse controls are needed before a larger public launch.
-
-## Local development
-
-The Dockerfile is for hosting. The two-terminal local workflow in `README.md` remains available.
+Vercel's free Hobby plan is for personal, non-commercial projects and has usage limits. Check its current terms before using the site commercially.
