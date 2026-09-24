@@ -1,38 +1,38 @@
-# Reusable ChatGPT prompt for QuizFlow PDFs
+# ChatGPT prompt for QuizFlow PDFs
 
-Attach the **course PDF** to ChatGPT, then paste this prompt. Replace the bracketed topic and difficulty before sending.
+Attach your **course or slide PDF** to ChatGPT, then copy the prompt below. QuizFlow also has a **Copy ChatGPT prompt** button on its Upload page.
 
 ```text
-Use the attached course PDF as the only source. Create a complete set of multiple-choice study questions for [COURSE OR TOPIC]. Aim for [DIFFICULTY, e.g. mixed beginner/intermediate]. There is no fixed question count. If the source already contains MCQs, include every usable question. Otherwise, make as many good questions as the source supports to cover all important testable concepts, with more questions for longer or denser sections. Avoid filler and repeated questions. Do not invent facts that are not supported by the PDF. Tell me the final question count in your chat reply.
+Use the attached course PDF as the only source. Create an MCQ study exam for it that I can upload to QuizFlow.
 
-Create a downloadable PDF named [COURSE]-mcq.pdf for my QuizFlow website. The PDF must contain selectable, extractable text. Do not make it an image or scan. Use a simple single-column layout. Do not put a title, instructions, page numbers, headers, footers, explanations, source citations, markdown formatting, or any other text inside the PDF.
+Coverage and length:
+- Read the whole source first. Identify the distinct testable ideas in every substantive slide or section. Combine slides that repeat the same idea. Do not make filler, trivia, duplicate, or unsupported questions.
+- Make 20 to 30 high-value questions for this PDF, with a hard maximum of 40. Cover the breadth of the material, not only the beginning. Use a mix of recall, understanding, and application when the source supports it.
+- If 40 questions cannot reasonably cover the material, split it into parts by topic or slide range. Create only Part 1 now (at most 40 questions). In your chat reply, say which topics/slides Part 1 covers and which remain. Wait for me to say “next part” before making Part 2. Each part must start its IDs at 1 and be a separate PDF.
 
-The PDF content must consist only of repeated question blocks in this exact structure and order:
+Answer quality:
+- Every question must have exactly one clearly correct answer and three plausible, distinct wrong answers. Avoid clues such as one option being much longer, more detailed, or grammatically different.
+- Shuffle the four options independently for each question. Correct letters should be reasonably spread across A, B, C, and D over the whole PDF, but do not use any repeating sequence such as A-B-C-D-A-B-C-D, a fixed rotation, or a predictable pattern. Do not assign letters in slide order or question order.
+- Before exporting, inspect the complete sequence of CORRECT_ANSWER letters. If a short sequence repeats or one letter dominates, reshuffle options and update the answer lines. Check that each CORRECT_ANSWER still points to the right option text.
+
+PDF and exact format:
+- Create a downloadable, text-selectable PDF named course-mcq-part-1.pdf. Use a clean single-column layout. Do not make a scanned or image-only PDF.
+- The PDF must contain ONLY question blocks. No title, page number, introduction, explanations, answer key, citations, markdown, or other text inside the PDF.
+- Use the following exact field names and markers for every question. Replace the example values; do not include this example question unless it is supported by the source:
 
 [QUESTION_START]
 ID: 1
 QUESTION: What does JVM stand for?
-OPTION_A: Java Virtual Machine
-OPTION_B: Java Visual Manager
-OPTION_C: Java Variable Method
+OPTION_A: Java Visual Manager
+OPTION_B: Java Variable Method
+OPTION_C: Java Virtual Machine
 OPTION_D: Java Verification Mode
-CORRECT_ANSWER: A
+CORRECT_ANSWER: C
 [QUESTION_END]
 
-The JVM block above shows the format only. Do not include it in the final PDF unless the attached course PDF actually covers that topic.
+- Number IDs consecutively from 1 within each PDF. Each block needs one QUESTION, OPTION_A through OPTION_D, and CORRECT_ANSWER containing only A, B, C, or D. Leave a blank line between blocks. Do not split marker or field labels across lines.
 
-Rules for every block:
-- Use the marker lines and field names exactly as shown, with uppercase letters and underscores.
-- Number IDs consecutively from 1, with no duplicates.
-- Include one clear question and exactly four nonempty options, A through D.
-- Put the correct answer letter on the CORRECT_ANSWER line: exactly A, B, C, or D. Do not include an explanation or the option text on that line.
-- Make exactly one option correct. Avoid ambiguous questions, trick wording, and duplicate options.
-- Spread correct answers across A, B, C, and D without forcing an obvious repeating pattern.
-- Keep each field label and its value together. Use a readable font and let long question or option text wrap naturally within that field; do not break a field into a new labeled field.
-- Leave one blank line between blocks. Keep each full block on one page when possible.
-- Do not add any text outside the blocks in the PDF.
-
-Before giving me the file, check the text extracted from the finished PDF. Confirm that every block has both markers, all seven required fields, a unique positive ID, four nonempty options, and a single-letter correct answer. Confirm the final valid question count in your chat reply. If you cannot create an actual downloadable PDF, tell me clearly instead of presenting plain chat text as a PDF.
+Before giving me the PDF, extract its text and verify that QuizFlow's markers and all seven fields appear for every block, all IDs are unique, and the final count is at most 40. In your chat reply, report the question count, coverage, and whether another part is needed. If you cannot create an actual downloadable PDF, say so clearly.
 ```
 
-Upload the resulting PDF to QuizFlow and review the preview before saving the exam. The website reports invalid blocks and imports valid ones.
+Upload each part as a separate exam in QuizFlow. You can choose a 10, 20, or 40 question practice session, or study the whole imported exam. QuizFlow shuffles answer positions during practice, including for older PDFs with a predictable answer sequence.

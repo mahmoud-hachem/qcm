@@ -15,10 +15,10 @@ Run these commands in the `qcm` folder, then open `http://127.0.0.1:5173/`.
 
 1. Create a course.
 2. Choose **Upload exam**, enter a title, and select `sample/sample-mcq.pdf`.
-3. Review the parsed questions, then save the exam.
-4. Take the exam in Exam or Study Mode and check its result in History.
+3. Try a question in the preview, then save the exam.
+4. Choose a short session or the full exam. Study Mode checks each answer immediately; Exam Mode shows results after submission.
 
-To generate a PDF from your own course material, use `MCQ_GENERATION_PROMPT.md` with ChatGPT. The PDF must contain selectable text and use the exact question blocks below. A scanned image PDF needs OCR first.
+To generate a PDF from your own course material, use the **Copy ChatGPT prompt** button on the Upload page or `MCQ_GENERATION_PROMPT.md`. The prompt limits each PDF to 40 questions and splits longer courses into parts. QuizFlow shuffles answer positions during practice. The PDF must contain selectable text and use the exact question blocks below. A scanned image PDF needs OCR first.
 
 ```text
 [QUESTION_START]

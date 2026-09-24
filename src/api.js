@@ -1,4 +1,5 @@
 import { parsePdf } from './pdf'
+import { isOptionOrder, questionForDisplay } from './questionOrder'
 
 const DATABASE = 'quizflow-local'
 const STORE = 'workspace'
@@ -124,7 +125,10 @@ export const api = {
     const ids = payload.question_ids.map(Number)
     if (!ids.length || ids.length !== new Set(ids).size || ids.some(qid => !questions.has(qid))) fail('The selected questions do not belong to this exam.')
     if (Object.keys(payload.answers).some(qid => !ids.includes(Number(qid)))) fail('An answer refers to a question outside this attempt.')
-    const answers = ids.map(qid => ({ question_id: qid, selected_answer: payload.answers[qid] || null, is_correct: payload.answers[qid] === questions.get(qid).correct_answer }))
+    if (payload.option_orders && ids.some(qid => !isOptionOrder(payload.option_orders[qid]))) fail('The answer order for this attempt is invalid.')
+    const answers = ids.map(qid => ({ question_id: qid, selected_answer: payload.answers[qid] || null,
+      is_correct: payload.answers[qid] === questions.get(qid).correct_answer,
+      option_order: payload.option_orders?.[qid] || null }))
     const correct = answers.filter(answer => answer.is_correct).length
     const unanswered = answers.filter(answer => !answer.selected_answer).length
     const attempt = { id: nextId(data), exam_id: exam.id, mode: payload.mode, score: correct,
@@ -135,7 +139,7 @@ export const api = {
     return { id: attempt.id }
   }),
   attempts: async examId => { const data = await read(); return data.attempts.filter(attempt => !examId || attempt.exam_id === Number(examId)).sort((a, b) => b.completed_at.localeCompare(a.completed_at)).map(attempt => attemptSummary(data, attempt)) },
-  attempt: async id => { const data = await read(); const attempt = requiredAttempt(data, id); const exam = requiredExam(data, attempt.exam_id); const questions = new Map(exam.questions.map(question => [question.id, question])); return { ...attemptSummary(data, attempt), answers: attempt.answers.map(answer => ({ ...questions.get(answer.question_id), selected_answer: answer.selected_answer, is_correct: answer.is_correct })) } },
+  attempt: async id => { const data = await read(); const attempt = requiredAttempt(data, id); const exam = requiredExam(data, attempt.exam_id); const questions = new Map(exam.questions.map(question => [question.id, question])); return { ...attemptSummary(data, attempt), answers: attempt.answers.map(answer => questionForDisplay({ ...questions.get(answer.question_id), selected_answer: answer.selected_answer, is_correct: answer.is_correct }, answer.option_order)) } },
   exportWorkspace: async () => ({ version: 1, exported_at: now(), data: await read() }),
   importWorkspace: payload => change(data => {
     const incoming = payload?.data
