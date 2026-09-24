@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { BookOpen, FileText, GraduationCap } from 'lucide-react'
+import { BookOpen, FileText } from 'lucide-react'
 import { api } from './api'
-import { APP_NAME } from './config'
 
 export default function SettingsPage() {
   const [message, setMessage] = useState('')
@@ -34,7 +33,6 @@ export default function SettingsPage() {
   return <>
     <header className="page-header"><div><p className="eyebrow">PREFERENCES</p><h1>Settings</h1><p className="page-description">Manage this browser's private study workspace.</p></div></header>
     <div className="panel settings-panel">
-      <div className="settings-row"><div className="settings-icon"><GraduationCap size={21} /></div><div><h3>Project name</h3><p>Change the name in <code>frontend/src/config.js</code>.</p></div><strong>{APP_NAME}</strong></div>
       <div className="settings-row"><div className="settings-icon"><BookOpen size={21} /></div><div><h3>Saved on this device</h3><p>Courses and results are stored in this browser. Export a backup before clearing browser data or changing devices.</p></div><button className="button secondary compact" onClick={exportData}>Export backup</button></div>
       <div className="settings-row"><div className="settings-icon"><BookOpen size={21} /></div><div><h3>Restore a backup</h3><p>This replaces the courses and results in this browser.</p></div><label className="button secondary compact" style={{ cursor: 'pointer' }}>Import backup<input type="file" accept=".json,application/json" onChange={importData} style={{ display: 'none' }} /></label></div>
       {message && <p className="settings-message">{message}</p>}

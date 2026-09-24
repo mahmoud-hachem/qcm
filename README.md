@@ -5,12 +5,11 @@ QuizFlow turns a ChatGPT-generated, standardized MCQ PDF into an interactive pra
 ## Run locally
 
 ```powershell
-cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173/`. You do not need to start the old FastAPI backend.
+Run these commands in the `qcm` folder, then open `http://127.0.0.1:5173/`.
 
 ## Try a PDF
 
@@ -39,6 +38,4 @@ IDs must be unique positive whole numbers. Answers must be A, B, C, or D. Invali
 
 Each browser stores its own courses, parsed questions, and results in IndexedDB. PDF bytes are read locally and are not uploaded to a server. Other visitors cannot see this browser's workspace. Another browser or device starts with an empty workspace. Use **Settings → Export backup** and **Import backup** to move or back up your data. Clearing site data can erase it.
 
-The existing `backend/` and root `Dockerfile` are from the earlier server-based version and are no longer used by the frontend. Existing local SQLite files are left intact; this browser-only version does not automatically import them.
-
-For Vercel and the Porkbun domain, follow `DEPLOYMENT.md`.
+For Vercel and the Porkbun domain, follow `DEPLOYMENT.md`. The repository root is the Vite app, so Vercel does not need a custom Root Directory.
