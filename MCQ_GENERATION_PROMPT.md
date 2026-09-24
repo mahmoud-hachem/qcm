@@ -1,9 +1,9 @@
 # Reusable ChatGPT prompt for QuizFlow PDFs
 
-Attach the **course PDF** to ChatGPT, then paste this prompt. Replace the bracketed values before sending.
+Attach the **course PDF** to ChatGPT, then paste this prompt. Replace the bracketed topic and difficulty before sending.
 
 ```text
-Use the attached course PDF as the only source. Create [NUMBER, e.g. 30] multiple-choice study questions for [COURSE OR TOPIC]. Aim for [DIFFICULTY, e.g. mixed beginner/intermediate]. Cover the important sections of the source proportionally. Do not invent facts that are not supported by the PDF. If the source does not support the requested number of good questions, make fewer and tell me the actual count in your chat reply.
+Use the attached course PDF as the only source. Create a complete set of multiple-choice study questions for [COURSE OR TOPIC]. Aim for [DIFFICULTY, e.g. mixed beginner/intermediate]. There is no fixed question count. If the source already contains MCQs, include every usable question. Otherwise, make as many good questions as the source supports to cover all important testable concepts, with more questions for longer or denser sections. Avoid filler and repeated questions. Do not invent facts that are not supported by the PDF. Tell me the final question count in your chat reply.
 
 Create a downloadable PDF named [COURSE]-mcq.pdf for my QuizFlow website. The PDF must contain selectable, extractable text. Do not make it an image or scan. Use a simple single-column layout. Do not put a title, instructions, page numbers, headers, footers, explanations, source citations, markdown formatting, or any other text inside the PDF.
 
