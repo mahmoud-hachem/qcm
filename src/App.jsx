@@ -205,7 +205,7 @@ function StartExam() {
   const [limit, setLimit] = useState(20)
   const { data, loading, error, refresh } = useData(() => api.exam(id), id)
   function begin(mode) {
-    const choices = [10, 20, 40].filter(size => size < data.question_count)
+    const choices = [10, 20, 40, 60].filter(size => size < data.question_count)
     const size = choices.includes(limit) ? limit : 'all'
     const pool = size === 'all' ? [] : Array.from({ length: size }, (_, index) => {
       const start = Math.floor(index * data.question_count / size)
@@ -223,7 +223,7 @@ function StartExam() {
   }
   if (loading) return <Loading />
   if (error) return <ErrorBox message={error} retry={refresh} />
-  const sizes = [10, 20, 40].filter(size => size < data.question_count)
+  const sizes = [10, 20, 40, 60].filter(size => size < data.question_count)
   const selectedLimit = sizes.includes(limit) ? limit : 'all'
   return <>
     <Header back={`/courses/${data.course_id}`} eyebrow={data.course_name.toUpperCase()} title={data.title} description={`${data.question_count} questions available · Choose a comfortable session length.`} />
