@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, CircleHelp, Clock3, Copy, FileText, GraduationCap, History, LayoutDashboard, Menu, MoreHorizontal, Plus, Search, Settings, Sparkles, Target, Trash2, UploadCloud, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, CircleHelp, Clock3, Copy, ExternalLink, FileText, GraduationCap, History, LayoutDashboard, Menu, MoreHorizontal, Plus, Search, Settings, Sparkles, Target, Trash2, UploadCloud, X } from 'lucide-react'
 import { api } from './api'
 import { APP_NAME } from './config'
 import { displayedLetter, shuffledOptionOrder } from './questionOrder'
@@ -169,11 +169,21 @@ function ImportPractice({ questions, onSave, busy }) {
 
 function PromptGuide() {
   const [message, setMessage] = useState('')
+  const chatUrl = `https://chatgpt.com/?prompt=${encodeURIComponent(mcqPrompt)}`
   async function copyPrompt() {
     try { await navigator.clipboard.writeText(mcqPrompt); setMessage('Prompt copied. Paste it into ChatGPT with your course PDF.') }
     catch { setMessage('Copy failed. Open the prompt below and copy it manually.') }
   }
-  return <div className="panel guide-panel"><div className="guide-icon"><FileText size={23} /></div><h3>Need an MCQ PDF?</h3><p className="guide-intro">Attach your course PDF to ChatGPT, then paste our prompt. It keeps each part manageable and varies correct answer positions.</p><button type="button" className="button secondary wide prompt-copy-button" onClick={copyPrompt}><Copy size={17} /> Copy ChatGPT prompt</button>{message && <p className="prompt-message" role="status">{message}</p>}<details className="prompt-details"><summary>Read the full prompt</summary><pre>{mcqPrompt}</pre></details></div>
+  function openChat() {
+    if (!navigator.clipboard) {
+      setMessage('ChatGPT opened. Attach your course PDF before sending. Use Copy prompt if the message is empty.')
+      return
+    }
+    navigator.clipboard.writeText(mcqPrompt)
+      .then(() => setMessage('ChatGPT opened. Attach your course PDF before sending. The prompt is also copied if you need to paste it.'))
+      .catch(() => setMessage('ChatGPT opened. Attach your course PDF before sending. Use Copy prompt if the message is empty.'))
+  }
+  return <div className="panel guide-panel"><div className="guide-icon"><FileText size={23} /></div><h3>Need an MCQ PDF?</h3><p className="guide-intro">Attach your course PDF to ChatGPT, then use our prompt. It keeps each part manageable and varies correct answer positions.</p><div className="prompt-actions"><button type="button" className="button secondary prompt-copy-button" onClick={copyPrompt}><Copy size={17} /> Copy prompt</button><a className="button primary prompt-open-button" href={chatUrl} target="_blank" rel="noopener noreferrer" onClick={openChat}><ExternalLink size={17} /> Open ChatGPT</a></div>{message && <p className="prompt-message" role="status">{message}</p>}<p className="prompt-hint">In ChatGPT, add your course PDF before you send the message.</p><details className="prompt-details"><summary>Read the full prompt</summary><pre>{mcqPrompt}</pre></details></div>
 }
 
 function UploadExam() {

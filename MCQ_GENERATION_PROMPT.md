@@ -1,6 +1,6 @@
 # ChatGPT prompt for QuizFlow PDFs
 
-Attach your **course or slide PDF** to ChatGPT, then copy the prompt below. QuizFlow also has a **Copy ChatGPT prompt** button on its Upload page.
+Attach your **course or slide PDF** to ChatGPT, then use the prompt below. On QuizFlow's Upload page, **Open ChatGPT** starts a new chat with the prompt ready, and **Copy prompt** is available if you need to paste it.
 
 ```text
 Use the attached course PDF as the only source. Create an MCQ study exam for it that I can upload to QuizFlow.

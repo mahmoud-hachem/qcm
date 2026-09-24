@@ -61,3 +61,5 @@
 @media(max-width:680px){.navigator-panel{order:0}.question-panel{order:-1}.exam-workspace{gap:14px}.navigator-panel .legend{display:none}}
 
 .empty-upload{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.85fr);gap:20px;align-items:start}.empty-upload .guide-panel{min-width:0}@media(max-width:900px){.empty-upload{grid-template-columns:1fr}}
+
+.prompt-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.prompt-actions .button{min-width:0;min-height:48px;padding:8px 10px;white-space:normal;text-align:center;font-size:12px}.prompt-hint{margin:12px 0 0;color:#667c91;font-size:12px;line-height:1.5}.prompt-actions .button:focus-visible{outline:3px solid #79a9df;outline-offset:2px}@media(max-width:360px){.prompt-actions{grid-template-columns:1fr}}
