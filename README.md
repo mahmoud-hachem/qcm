@@ -13,7 +13,7 @@ Run these commands in the `qcm` folder, then open `http://127.0.0.1:5173/`.
 
 ## Try a PDF
 
-1. Create a course.
+1. Choose **Mahmoud** or **Amer**, then create a course.
 2. Choose **Upload exam**, enter a title, and select `sample/sample-mcq.pdf`.
 3. Try a question in the preview, then save the exam.
 4. Choose a short session or the full exam. Study Mode checks each answer immediately; Exam Mode shows results after submission.
@@ -36,6 +36,8 @@ IDs must be unique positive whole numbers. Answers must be A, B, C, or D. Invali
 
 ## Data and privacy
 
-Each browser stores its own courses, parsed questions, and results in IndexedDB. PDF bytes are read locally and are not uploaded to a server. Other visitors cannot see this browser's workspace. Another browser or device starts with an empty workspace. Use **Settings → Export backup** and **Import backup** to move or back up your data. Clearing site data can erase it.
+Choose **Mahmoud** or **Amer** when opening the app. Each profile has separate courses, exams, and results in this browser. Existing data from before profiles were added belongs to **Mahmoud** automatically; Amer starts empty. Use **Switch profile** in the header to change profiles.
+
+These are local profiles without passwords, not online accounts. Anyone using the same browser can open either profile. Another browser or device starts empty; profiles do not sync. PDF bytes are read locally and are not uploaded to a server. Use **Settings → Export backup** and **Import backup** to move or back up the selected profile's data. Importing replaces only that profile. Clearing site data can erase both profiles.
 
 For Vercel and the Porkbun domain, follow `DEPLOYMENT.md`. The repository root is the Vite app, so Vercel does not need a custom Root Directory.

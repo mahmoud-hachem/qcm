@@ -3,8 +3,23 @@ import { isOptionOrder, questionForDisplay } from './questionOrder'
 
 const DATABASE = 'quizflow-local'
 const STORE = 'workspace'
-const RECORD = 'data'
+export const PROFILES = [
+  { id: 'mahmoud', name: 'Mahmoud', initial: 'M' },
+  { id: 'amer', name: 'Amer', initial: 'A' },
+]
+let activeProfile = null
 let writeQueue = Promise.resolve()
+
+export function setActiveProfile(id) {
+  if (id !== null && !PROFILES.some(profile => profile.id === id)) throw new Error('Choose a valid profile.')
+  activeProfile = id
+}
+
+function workspaceRecord() {
+  if (!activeProfile) throw new Error('Choose a profile to open your workspace.')
+  // Keep the existing workspace intact: all pre-profile data belongs to Mahmoud.
+  return activeProfile === 'mahmoud' ? 'data' : 'profile:amer'
+}
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -15,32 +30,34 @@ function openDatabase() {
   })
 }
 
-async function read() {
+async function read(record = workspaceRecord()) {
   const db = await openDatabase()
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE, 'readonly')
-    const request = transaction.objectStore(STORE).get(RECORD)
+    const request = transaction.objectStore(STORE).get(record)
     request.onsuccess = () => resolve(request.result || { courses: [], exams: [], attempts: [], nextId: 1 })
     request.onerror = () => reject(new Error('Could not read your browser workspace.'))
     transaction.oncomplete = () => db.close()
   })
 }
 
-async function write(data) {
+async function write(data, record) {
   const db = await openDatabase()
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE, 'readwrite')
-    transaction.objectStore(STORE).put(data, RECORD)
+    transaction.objectStore(STORE).put(data, record)
     transaction.oncomplete = () => { db.close(); resolve() }
     transaction.onerror = () => { db.close(); reject(new Error('Could not save to this browser. Check its storage settings or available space.')) }
   })
 }
 
 function change(update) {
+  // Capture before queuing so switching profiles cannot redirect pending writes.
+  const record = workspaceRecord()
   const result = writeQueue.then(async () => {
-    const data = await read()
+    const data = await read(record)
     const answer = update(data)
-    await write(data)
+    await write(data, record)
     return answer
   })
   writeQueue = result.catch(() => {})

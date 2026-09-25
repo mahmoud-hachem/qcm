@@ -5,6 +5,7 @@ import { api } from './api'
 import { APP_NAME } from './config'
 import { displayedLetter, shuffledOptionOrder } from './questionOrder'
 import SettingsPage from './SettingsPage'
+import { useProfile } from './Profiles'
 import promptMarkdown from '../MCQ_GENERATION_PROMPT.md?raw'
 
 const fmtDate = value => value ? new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not yet'
@@ -52,6 +53,7 @@ function TextModal({ title, label, initial = '', onClose, onSave, busy }) {
 
 function Shell({ children }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { profile, switchProfile } = useProfile()
   const { pathname } = useLocation()
   const focused = /^\/exams\/[^/]+\/take$/.test(pathname)
   const nav = [
@@ -69,7 +71,7 @@ function Shell({ children }) {
       <div className="side-bottom"><NavLink to="/settings" onClick={() => setMenuOpen(false)} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><Settings size={19} />Settings</NavLink></div>
     </aside>
     {menuOpen && <div className="sidebar-scrim" onClick={() => setMenuOpen(false)} />}
-    <div className="main-wrap"><div className="topbar"><button className="icon-button mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={22} /></button><span className="topbar-label">Your learning workspace</span><div className="topbar-right"><span className="local-badge"><span />Local workspace</span></div></div><main className="page-content">{children}</main></div>
+    <div className="main-wrap"><div className="topbar"><button className="icon-button mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={22} /></button><span className="topbar-label">Your learning workspace</span><div className="topbar-right"><button type="button" className="profile-switch" onClick={() => { setMenuOpen(false); switchProfile() }} aria-label={`Switch profile, currently ${profile.name}`}><span className={`profile-chip profile-${profile.id}`}>{profile.initial}</span><span><strong>{profile.name}</strong><small>Switch profile</small></span></button></div></div><main className="page-content">{children}</main></div>
     <nav className="mobile-bottom">{nav.map(({ to, label, icon: Icon, end }) => <NavLink key={to} end={end} to={to} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={20} /><span>{label === 'Recent Exams' ? 'Exams' : label}</span></NavLink>)}</nav>
   </div>
 }
