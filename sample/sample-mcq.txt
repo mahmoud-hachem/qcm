@@ -1,29 +1,8 @@
-[QUESTION_START]
-ID: 1
-QUESTION: What does JVM stand for?
-OPTION_A: Java Virtual Machine
-OPTION_B: Java Visual Manager
-OPTION_C: Java Variable Method
-OPTION_D: Java Verification Mode
-CORRECT_ANSWER: A
-[QUESTION_END]
-
-[QUESTION_START]
-ID: 2
-QUESTION: Which command compiles a Java file?
-OPTION_A: java
-OPTION_B: javac
-OPTION_C: jvm
-OPTION_D: compile
-CORRECT_ANSWER: B
-[QUESTION_END]
-
-[QUESTION_START]
-ID: 3
-QUESTION: Which keyword creates a subclass in Java?
-OPTION_A: inherits
-OPTION_B: implements
-OPTION_C: extends
-OPTION_D: super
-CORRECT_ANSWER: C
-[QUESTION_END]
+Q1. A developer can write excellent Java code but has difficulty understanding customer needs, organizing teamwork, and managing changes. According to the chapter, what does this illustrate?
+PDF page: 7
+A. Programming ability alone is not the same as software engineering
+B. Programming is more important than management
+C. Software engineering is mainly about learning more languages
+D. Customer communication is outside software engineering
+Correct answer: A
+Explanation: The chapter distinguishes programming from designing and engineering a complete software product. Software engineering also involves organization, management, communication, formalization, and human factors.

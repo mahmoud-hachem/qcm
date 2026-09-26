@@ -40,7 +40,7 @@ export default function SettingsPage() {
       <div className="settings-row"><div className="settings-icon"><BookOpen size={21} /></div><div><h3>Saved on this device</h3><p>Export {profile.name}'s courses, exams, and results before clearing browser data or changing devices.</p></div><button className="button secondary compact" onClick={exportData}>Export backup</button></div>
       <div className="settings-row"><div className="settings-icon"><BookOpen size={21} /></div><div><h3>Restore a backup</h3><p>This replaces only {profile.name}'s courses, exams, and results. The other profile stays unchanged.</p></div><label className="button secondary compact" style={{ cursor: 'pointer' }}>Import backup<input type="file" accept=".json,application/json" onChange={importData} style={{ display: 'none' }} /></label></div>
       {message && <p className="settings-message">{message}</p>}
-      <div className="settings-row"><div className="settings-icon"><FileText size={21} /></div><div><h3>PDF format</h3><p>Use the standardized question blocks shown in the sample file. The PDF is read in your browser.</p></div></div>
+      <div className="settings-row"><div className="settings-icon"><FileText size={21} /></div><div><h3>Question format</h3><p>Paste Q1/Q2 study questions or upload a text-selectable PDF or text file. Each question includes its source PDF page and explanation.</p></div></div>
     </div>
   </>
 }

@@ -1,6 +1,6 @@
 # Deploy QuizFlow on Vercel
 
-This version is a static Vite site. It needs no Render service, Neon database, API key, or server. PDF parsing and course history run in each visitor's browser. The domain stays registered at Porkbun.
+This version is a static Vite site. It needs no Render service, Neon database, API key, or server. Question import and course history run in each visitor's browser. The domain stays registered at Porkbun.
 
 ## Deploy
 
@@ -15,7 +15,7 @@ The SPA route fallback is in `vercel.json`, so links to exams and results open c
 
 ## What visitors should know
 
-Each browser has a separate local study library. There is no account or automatic sync. Visitors can export and import a backup in Settings. Clearing site data can remove their courses and results. The PDF file is read in the browser and is not sent to Vercel; only the app's static files are hosted there.
+Each browser has a separate local study library. There is no account or automatic sync. Visitors can export and import a backup in Settings. Clearing site data can remove their courses and results. Pasted questions and uploaded question files are read in the browser and are not sent to Vercel; only the app's static files are hosted there.
 
 The temporary `*.vercel.app` address and `mahmoudhachem.dev` use separate browser storage. Export a backup from the temporary address and import it on the custom domain if you want to keep test courses.
 

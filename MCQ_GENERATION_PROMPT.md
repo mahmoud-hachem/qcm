@@ -1,39 +1,35 @@
-# ChatGPT prompt for QuizFlow PDFs
+# Reusable course PDF study exam prompt
 
-Attach your **course or slide PDF** to ChatGPT, then use the prompt below. On QuizFlow's Upload page, **Open ChatGPT** starts a new chat with the prompt ready, and **Copy prompt** is available if you need to paste it.
+Attach the course or chapter PDF you want to study, then copy this prompt into ChatGPT. Download the PDF it creates and upload that PDF to QuizFlow.
 
 ```text
-Use the attached course PDF as the only source. Create an MCQ study exam for it that I can upload to QuizFlow.
+Use the attached course or chapter PDF as the main source to create an MCQ study exam covering the entire attached material. Use whichever PDF I attach; do not assume a particular chapter number, title, or subject.
 
-Coverage and length:
-- Read the whole source first, including every substantive slide. Identify the distinct testable ideas and make an internal coverage checklist. Combine slides that repeat the same idea. Skip only title, agenda, reference, or duplicate slides with no new testable content.
-- Aim for about 50 to 70 high-value questions in one PDF. Let the number follow the material: use fewer than 50 if the source cannot support 50 distinct good questions. Do not pad with filler, trivia, duplicates, or unsupported facts just to reach a target.
-- Cover the important ideas from the entire source, including its final slides. A question may test ideas shared across related slides. Use a mix of recall, understanding, and application when supported by the source.
-- Audit the coverage checklist before exporting. If the important material genuinely cannot be covered well in 70 questions, do not silently omit it. Create Part 1 with at most 70 questions, state exactly which topics or slide ranges remain in your chat reply, and wait for me to say “next part” to create the next PDF. Each part starts its IDs at 1 and avoids repeating earlier questions.
+- Read the entire PDF before creating questions, including its final pages.
+- Cover all important concepts, definitions, principles, comparisons, processes, and ideas.
+- Mix direct knowledge, understanding, application/scenario, comparison, and concept-identification questions. Make students use the ideas, not merely recognize copied sentences.
+- Base every question on the attached PDF. Do not introduce unrelated information or unimportant trivia.
+- Choose the question count from the material itself, with no target, minimum, or fixed maximum. Keep the exam manageable: use only enough questions to cover the whole course properly. Combine repeated ideas, avoid testing the same point repeatedly, and remove filler. Do not leave out an important concept just to shorten the exam.
+- Every question must have exactly four distinct options, A through D, and exactly one correct answer. Make wrong options plausible and related to the topic.
+- Distribute correct letters across A, B, C, and D without an obvious sequence or one letter dominating.
+- Arrange the question blocks in the order of the source PDF pages so the exam can also be used for step-by-step studying. QuizFlow will shuffle them in Exam Mode.
+- Put the exact source PDF page reference immediately below every question, before option A. Use the page number of the attached course PDF, counting its first PDF page as page 1. Check the actual page where the answer is taught; do not guess or use the generated exam PDF's page number. For example, if the idea appears on source page 7, write "PDF page: 7". If it depends on source pages 7 and 8, write "PDF pages: 7–8". Replace these example numbers with the verified page or pages for each real question.
+- After each question, state the correct answer and give a short, useful explanation. Explain the concept and, when helpful, why other choices are wrong.
 
-Answer quality:
-- Every question must have exactly one clearly correct answer and three plausible, distinct wrong answers. Avoid clues such as one option being much longer, more detailed, or grammatically different.
-- Shuffle the four options independently for each question. Correct letters should be reasonably spread across A, B, C, and D over the whole PDF, but do not use any repeating sequence such as A-B-C-D-A-B-C-D, a fixed rotation, or a predictable pattern. Do not assign letters in slide order or question order.
-- Before exporting, inspect the complete sequence of CORRECT_ANSWER letters. If a short sequence repeats or one letter dominates, reshuffle options and update the answer lines. Check that each CORRECT_ANSWER still points to the right option text.
+Create one downloadable, text-selectable PDF containing the full exam. Name it after the attached source PDF with "-study-mcq" added before .pdf. In the generated PDF, use a clean single-column layout with no cover, introduction, running headers, separate answer key, or other text outside the question blocks. Every question must visibly contain its source PDF page reference in the exact format above. Keep each question, its options, page reference, answer, and explanation together when possible. Do not make an image-only PDF.
 
-PDF and exact format:
-- Create a downloadable, text-selectable PDF named course-mcq-part-1.pdf. Use a clean single-column layout. Do not make a scanned or image-only PDF.
-- The PDF must contain ONLY question blocks. No title, page number, introduction, explanations, answer key, citations, markdown, or other text inside the PDF.
-- Use the following exact field names and markers for every question. Replace the example values; do not include this example question unless it is supported by the source:
+Use this exact plain-text structure in the generated PDF for every question, with consecutive numbers starting at Q1:
 
-[QUESTION_START]
-ID: 1
-QUESTION: What does JVM stand for?
-OPTION_A: Java Visual Manager
-OPTION_B: Java Variable Method
-OPTION_C: Java Virtual Machine
-OPTION_D: Java Verification Mode
-CORRECT_ANSWER: C
-[QUESTION_END]
+Q1. <question text>
+PDF page: <actual source PDF page number>
+A. <option text>
+B. <option text>
+C. <option text>
+D. <option text>
+Correct answer: <A, B, C, or D>
+Explanation: <short useful explanation>
 
-- Number IDs consecutively from 1 within each PDF. Each block needs one QUESTION, OPTION_A through OPTION_D, and CORRECT_ANSWER containing only A, B, C, or D. Leave a blank line between blocks. Do not split marker or field labels across lines.
+For a question based on more than one page, write "PDF pages: <first source page>–<last source page>" instead. Continue Q2, Q3, and so on in the same structure. Replace all placeholders with real content and verified source page numbers.
 
-Before giving me the PDF, extract its text and verify that QuizFlow's markers and all seven fields appear for every block, all IDs are unique, and the final count is at most 70. Recheck the coverage checklist against the source, including its final slides. In your chat reply, report the question count, coverage, and whether another part is needed. If you cannot create an actual downloadable PDF, say so clearly.
+Before finishing, make an internal checklist of the important concepts in every section and check the complete exam against it, including the final pages. Remove unnecessary duplicates, verify every source page reference, confirm four options and one correct answer per question, check the answer-letter distribution, and confirm every question has an explanation. Extract the generated PDF's text and verify that every question still contains its source page line, options, correct answer, and explanation. In your chat reply, provide the downloadable PDF and briefly report the actual question count and coverage. If you cannot generate an actual downloadable PDF, say so clearly and provide the same question blocks as plain text.
 ```
-
-Upload each part as a separate exam in QuizFlow. You can choose a 10, 20, 40, or 60 question practice session, or study the whole imported exam. QuizFlow shuffles answer positions during practice, including for older PDFs with a predictable answer sequence.
