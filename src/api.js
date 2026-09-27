@@ -1,4 +1,4 @@
-import { parseInput } from './pdf'
+import { parseText } from './questionParser'
 import { isOptionOrder, questionForDisplay } from './questionOrder'
 
 const DATABASE = 'quizflow-local'
@@ -124,7 +124,7 @@ export const api = {
   examReview: async id => { const data = await read(); const exam = requiredExam(data, id); return { ...examSummary(data, exam), questions: exam.questions } },
   renameExam: (id, title) => change(data => { if (!title.trim()) fail('Enter an exam title.'); const exam = requiredExam(data, id); exam.title = title.trim(); return { id: exam.id, title: exam.title } }),
   deleteExam: id => change(data => { requiredExam(data, id); data.exams = data.exams.filter(exam => exam.id !== Number(id)); data.attempts = data.attempts.filter(attempt => attempt.exam_id !== Number(id)) }),
-  preview: parseInput,
+  preview: parseText,
   saveExam: payload => change(data => {
     requiredCourse(data, payload.course_id)
     if (!payload.title?.trim()) fail('Enter an exam title.')

@@ -75,8 +75,8 @@ function parseStudyQuestions(text) {
     const issues = []
     let current = 'QUESTION'
     for (const raw of lines.slice(start + 1, starts[blockIndex + 1] ?? lines.length)) {
-      const line = raw.trim()
-      if (!line) continue
+      const line = raw.trim().replace(/\\$/, '').trim().replace(/^\*\*/, '').replace(/\*\*$/, '').replace(/^((?:PDF pages?|Correct answer|Explanation)\s*:)\*\*/i, '$1')
+      if (!line || /^```/.test(line)) continue
       let match = /^PDF\s+pages?\s*:\s*(.*)$/i.exec(line)
       if (match) { if (values.PAGE !== undefined) issues.push('Duplicate PDF page'); values.PAGE = match[1].trim(); current = null; continue }
       match = /^([ABCD])\s*[.)]\s*(.*)$/i.exec(line)

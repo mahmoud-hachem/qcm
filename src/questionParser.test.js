@@ -12,6 +12,16 @@ test('imports the requested page and explanation format, including wrapped text'
   assert.equal(result.questions[1].correct_answer, 'D')
 })
 
+test('imports the copyable Markdown format with bold labels and line breaks', () => {
+  const result = parseText(`\`\`\`text\nQ76. Which activity is appropriate during backlog grooming/refinement?\n**PDF page: 108**\nA. Permanently freezing all story priorities\\\nB. Preventing new stories from being added\\\nC. Refusing to revise estimates\\\nD. Splitting a high-priority story that is too large for an upcoming sprint\n**Correct answer: D**\n**Explanation:** Refinement includes removing obsolete stories, adding newly discovered needs, reprioritizing, estimating, revising estimates, and splitting oversized stories.\n\`\`\``)
+  assert.equal(result.valid_count, 1)
+  assert.equal(result.invalid_count, 0)
+  assert.equal(result.questions[0].pdf_page, '108')
+  assert.equal(result.questions[0].option_a, 'Permanently freezing all story priorities')
+  assert.equal(result.questions[0].correct_answer, 'D')
+  assert.match(result.questions[0].explanation, /splitting oversized stories\.$/)
+})
+
 test('skips a question missing its explanation or page', () => {
   const result = parseText(`Q1. Incomplete?\nA. One\nB. Two\nC. Three\nD. Four\nCorrect answer: A\nQ2. Complete?\nPDF page: 4\nA. One\nB. Two\nC. Three\nD. Four\nCorrect answer: C\nExplanation: Three.`)
   assert.equal(result.detected_count, 2)
