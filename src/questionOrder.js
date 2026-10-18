@@ -1,3 +1,5 @@
+import { choiceLetters, isBlankQuestion } from './questionModel.js'
+
 export const LETTERS = ['A', 'B', 'C', 'D']
 
 export function questionsByPdfPage(questions) {
@@ -26,8 +28,8 @@ export function questionsForMode(questions, mode, random = Math.random) {
   return mode === 'exam' ? shuffledQuestions(questions, random) : questionsByPdfPage(questions)
 }
 
-export function shuffledOptionOrder() {
-  const order = [...LETTERS]
+export function shuffledOptionOrder(letters = LETTERS) {
+  const order = [...letters]
   for (let index = order.length - 1; index > 0; index--) {
     const swap = Math.floor(Math.random() * (index + 1))
     ;[order[index], order[swap]] = [order[swap], order[index]]
@@ -35,18 +37,33 @@ export function shuffledOptionOrder() {
   return order.join('')
 }
 
-export function isOptionOrder(order) {
-  return typeof order === 'string' && order.length === 4 && LETTERS.every(letter => order.includes(letter))
+export function isOptionOrder(order, letters = LETTERS) {
+  return typeof order === 'string' && order.length === letters.length && letters.every(letter => order.includes(letter))
+}
+
+export function optionOrderForQuestion(question, shuffle = false) {
+  if (isBlankQuestion(question)) return Object.fromEntries(question.blanks.map(blank => [blank.id, optionOrderForQuestion(blank, shuffle)]))
+  const letters = choiceLetters(question)
+  return shuffle ? shuffledOptionOrder(letters) : letters.join('')
+}
+
+export function isQuestionOptionOrder(question, order) {
+  return isBlankQuestion(question) ? !!order && question.blanks.every(blank => isQuestionOptionOrder(blank, order[blank.id])) : isOptionOrder(order, choiceLetters(question))
 }
 
 export function displayedLetter(order, originalLetter) {
   if (!originalLetter) return null
-  return LETTERS[isOptionOrder(order) ? order.indexOf(originalLetter) : LETTERS.indexOf(originalLetter)] || null
+  return LETTERS[typeof order === 'string' ? order.indexOf(originalLetter) : LETTERS.indexOf(originalLetter)] || null
 }
 
 export function questionForDisplay(question, order) {
-  if (!isOptionOrder(order)) return question
-  const options = Object.fromEntries(LETTERS.map((letter, index) => [
+  if (isBlankQuestion(question)) {
+    const blanks = question.blanks.map(blank => questionForDisplay({ ...blank, selected_answer: question.selected_answer?.[blank.id] }, order?.[blank.id]))
+    return { ...question, blanks, selected_answer: question.selected_answer ? Object.fromEntries(blanks.map(blank => [blank.id, blank.selected_answer])) : null }
+  }
+  const letters = choiceLetters(question)
+  if (!letters.length || !isOptionOrder(order, letters)) return question
+  const options = Object.fromEntries(letters.map((letter, index) => [
     `option_${letter.toLowerCase()}`,
     question[`option_${order[index].toLowerCase()}`],
   ]))

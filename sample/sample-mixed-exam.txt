@@ -1,0 +1,56 @@
+Q1. A library component hides how it stores records but exposes a small set of operations. Which concept does this illustrate?
+Type: MCQ
+PDF page: 1
+A. Inheritance
+B. Encapsulation
+C. Scheduling
+D. Replication
+Correct answer: B
+Explanation: Encapsulation hides internal state behind a defined interface.
+
+Q2. A stack removes the item that has been waiting the longest.
+Type: TRUE_FALSE
+PDF page: 1
+A. True
+B. False
+Correct answer: B
+Explanation: A stack is last in, first out. A queue removes the oldest waiting item.
+
+Q3. A print service processes jobs in arrival order using a [[1]]. An editor keeps recently performed actions in a [[2]] so it can undo the newest action first.
+Type: CLOZE
+PDF page: 2
+Blank 1: MCQ
+A. Stack
+B. Tree
+C. Queue
+D. Set
+Correct answer: C
+Blank 2: MCQ
+A. Queue
+B. Stack
+C. Graph
+D. Hash table
+Correct answer: B
+Explanation: Queues are first in, first out; stacks are last in, first out. These structures support different ordering needs.
+
+Q4. A system that stores repeated copies of data on several machines uses [[1]]. A temporary fast store that reuses the results of expensive reads is a [[2]].
+Type: FILL_BLANK
+PDF page: 3
+Blank 1: TEXT
+Accepted answers: replication | data replication
+Blank 2: TEXT
+Accepted answers: cache | data cache
+Explanation: Replication keeps copies on multiple machines; a cache retains results to speed later access.
+
+Q5. A server retains no information about earlier requests, so its request handling is [[1]]. A request that produces the same effect when repeated is called [[2]].
+Type: CLOZE
+PDF page: 4
+Blank 1: MCQ
+A. Stateful
+B. Stateless
+C. Recursive
+D. Replicated
+Correct answer: B
+Blank 2: TEXT
+Accepted answers: idempotent
+Explanation: Stateless handling does not depend on stored request history. Idempotence means repeating an operation has the same intended effect as doing it once.

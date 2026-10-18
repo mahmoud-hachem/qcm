@@ -3,9 +3,10 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams, useS
 import { ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, CircleHelp, Clock3, Copy, ExternalLink, FileText, GraduationCap, History, LayoutDashboard, Menu, MoreHorizontal, Plus, Search, Settings, Sparkles, Target, Trash2, X } from 'lucide-react'
 import { api } from './api'
 import { APP_NAME } from './config'
-import { displayedLetter, questionsByPdfPage, questionsForMode, shuffledOptionOrder } from './questionOrder'
+import { optionOrderForQuestion, questionsByPdfPage, questionsForMode } from './questionOrder'
 import SettingsPage from './SettingsPage'
-import { useProfile } from './Profiles'
+import { answerDescription, choiceLetters, correctDescription, gradeAnswer, hasAnswer, isBlankQuestion, isCompleteAnswer, TYPE_LABELS } from './questionModel'
+import { QuestionResponse, QuestionFeedback } from './QuestionResponse'
 import promptMarkdown from '../MCQ_GENERATION_PROMPT.md?raw'
 
 const fmtDate = value => value ? new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not yet'
@@ -54,7 +55,6 @@ function TextModal({ title, label, initial = '', onClose, onSave, busy }) {
 
 function Shell({ children }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { profile, switchProfile } = useProfile()
   const { pathname } = useLocation()
   const focused = /^\/exams\/[^/]+\/take$/.test(pathname)
   const nav = [
@@ -72,7 +72,7 @@ function Shell({ children }) {
       <div className="side-bottom"><NavLink to="/settings" onClick={() => setMenuOpen(false)} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><Settings size={19} />Settings</NavLink></div>
     </aside>
     {menuOpen && <div className="sidebar-scrim" onClick={() => setMenuOpen(false)} />}
-    <div className="main-wrap"><div className="topbar"><button className="icon-button mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={22} /></button><span className="topbar-label">Your learning workspace</span><div className="topbar-right"><button type="button" className="profile-switch" onClick={() => { setMenuOpen(false); switchProfile() }} aria-label={`Switch profile, currently ${profile.name}`}><span className={`profile-chip profile-${profile.id}`}>{profile.initial}</span><span><strong>{profile.name}</strong><small>Switch profile</small></span></button></div></div><main className="page-content">{children}</main></div>
+    <div className="main-wrap"><div className="topbar"><button className="icon-button mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={22} /></button><span className="topbar-label">Your learning workspace</span><div className="topbar-right"><span className="shared-workspace"><GraduationCap size={18} /> Shared workspace</span></div></div><main className="page-content">{children}</main></div>
     <nav className="mobile-bottom">{nav.map(({ to, label, icon: Icon, end }) => <NavLink key={to} end={end} to={to} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={20} /><span>{label === 'Recent Exams' ? 'Exams' : label}</span></NavLink>)}</nav>
   </div>
 }
@@ -88,7 +88,7 @@ function Dashboard() {
   const latest = data.recent_exams[0]
   return <>
     <Header eyebrow="YOUR STUDY SPACE" title="Ready to practice?" description="Your courses, questions, and progress in one place." actions={data.total_courses > 0 && <Link className="button primary" to="/upload"><Plus size={18} /> Add exam</Link>} />
-    {latest ? <section className="study-hero"><div><p className="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2>{latest.title}</h2><p>{latest.course_name} · {latest.question_count} questions</p></div><Link className="button primary" to={`/exams/${latest.id}/start`}>Start a session <ArrowRight size={18} /></Link></section> : <section className="study-hero"><div><p className="eyebrow">LET'S GET STARTED</p><h2>{data.total_courses ? 'Turn your course questions into practice.' : 'Your first course starts here.'}</h2><p>{data.total_courses ? 'Paste your generated MCQs to create an exam.' : 'Create a course, then add an MCQ study exam to start learning.'}</p></div>{!data.total_courses && <Link className="button primary" to="/courses">Create a course <ArrowRight size={18} /></Link>}</section>}
+    {latest ? <section className="study-hero"><div><p className="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2>{latest.title}</h2><p>{latest.course_name} · {latest.question_count} questions</p></div><Link className="button primary" to={`/exams/${latest.id}/start`}>Start a session <ArrowRight size={18} /></Link></section> : <section className="study-hero"><div><p className="eyebrow">LET'S GET STARTED</p><h2>{data.total_courses ? 'Turn your course questions into practice.' : 'Your first course starts here.'}</h2><p>{data.total_courses ? 'Paste your generated mixed questions to create an exam.' : 'Create a course, then add a mixed Moodle-style exam to start learning.'}</p></div>{!data.total_courses && <Link className="button primary" to="/courses">Create a course <ArrowRight size={18} /></Link>}</section>}
     <section className="dashboard-metrics"><div><strong>{data.total_courses}</strong><span>Courses</span></div><div><strong>{data.total_exams}</strong><span>Exams</span></div><div><strong>{data.total_attempts}</strong><span>Sessions finished</span></div><div><strong>{fmtScore(data.average_score)}</strong><span>Average score</span></div></section>
     <div className="dashboard-grid"><section className="panel"><div className="section-heading"><div><h2>Your exams</h2><p>Choose what to study next.</p></div>{latest && <Link className="subtle-link" to="/exams">View all <ArrowRight size={15} /></Link>}</div>{latest ? <div className="list-stack">{data.recent_exams.map(exam => <Link className="recent-row" to={`/exams/${exam.id}/start`} key={exam.id}><div className="row-icon"><FileText size={20} /></div><div className="row-main"><strong>{exam.title}</strong><span>{exam.course_name} · {exam.question_count} questions</span></div><ChevronRight size={18} /></Link>)}</div> : <div className="small-empty">Your imported exams will appear here.</div>}</section>
     <section className="panel"><div className="section-heading"><div><h2>Recent progress</h2><p>Every session helps you improve.</p></div>{data.recent_attempts.length > 0 && <Link className="subtle-link" to="/history">History <ArrowRight size={15} /></Link>}</div>{data.recent_attempts.length ? <div className="list-stack">{data.recent_attempts.map(attempt => <Link className="recent-row" to={`/attempts/${attempt.id}`} key={attempt.id}><div className="row-main"><strong>{attempt.exam_title}</strong><span>{attempt.score}/{attempt.total_questions} correct · {fmtDate(attempt.completed_at)}</span></div><span className="score-pill">{fmtScore(attempt.percentage)}</span></Link>)}</div> : <div className="small-empty">Finish a session to see your results here.</div>}</section></div>
@@ -103,7 +103,7 @@ function Courses() {
   const visible = data?.filter(c => c.name.toLowerCase().includes(query.toLowerCase())) || []
   async function save(name) { setBusy(true); try { if (modal?.id) await api.renameCourse(modal.id, name); else await api.createCourse(name); setModal(null); refresh() } finally { setBusy(false) } }
   async function remove(course) { if (!window.confirm(`Delete ${course.name} and all its exams and attempts? This cannot be undone.`)) return; try { await api.deleteCourse(course.id); refresh() } catch (e) { alert(e.message) } }
-  return <><Header eyebrow="YOUR LIBRARY" title="Courses" description="Organize your exams by subject and keep your progress in view." actions={<button className="button primary" onClick={() => setModal({})}><Plus size={17} /> Create course</button>} />{loading ? <Loading /> : error ? <ErrorBox message={error} retry={refresh} /> : data.length ? <><div className="list-toolbar"><label className="search-box"><Search size={18} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search courses" aria-label="Search courses" /></label><span className="toolbar-count">{visible.length} courses</span></div>{visible.length ? <div className="course-grid">{visible.map((c, index) => <article className="course-card" key={c.id}><div className="course-card-top"><div className={`course-icon color-${index % 5}`}><BookOpen size={23} /></div><div className="card-actions"><button className="icon-button" title="Rename" onClick={() => setModal(c)}><MoreHorizontal size={21} /></button><button className="icon-button" title="Delete" onClick={() => remove(c)}><Trash2 size={17} /></button></div></div><Link to={`/courses/${c.id}`} className="course-title">{c.name} <ChevronRight size={17} /></Link><p>{c.exam_count} {c.exam_count === 1 ? 'exam' : 'exams'} · {c.question_count} questions</p><div className="course-card-bottom"><div><span>Average score</span><strong>{fmtScore(c.average_score)}</strong></div><div><span>Last studied</span><strong>{fmtDate(c.last_studied)}</strong></div></div></article>)}</div> : <Empty icon={Search} title="No matching courses" text="Try a different search term." />}</> : <Empty title="No courses yet" text="Create your first course and paste MCQs to start studying." />}{modal && <TextModal title={modal.id ? 'Rename course' : 'Create a course'} label="Course name" initial={modal.name || ''} onClose={() => setModal(null)} onSave={save} busy={busy} />}</>
+  return <><Header eyebrow="YOUR LIBRARY" title="Courses" description="Organize your exams by subject and keep your progress in view." actions={<button className="button primary" onClick={() => setModal({})}><Plus size={17} /> Create course</button>} />{loading ? <Loading /> : error ? <ErrorBox message={error} retry={refresh} /> : data.length ? <><div className="list-toolbar"><label className="search-box"><Search size={18} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search courses" aria-label="Search courses" /></label><span className="toolbar-count">{visible.length} courses</span></div>{visible.length ? <div className="course-grid">{visible.map((c, index) => <article className="course-card" key={c.id}><div className="course-card-top"><div className={`course-icon color-${index % 5}`}><BookOpen size={23} /></div><div className="card-actions"><button className="icon-button" title="Rename" onClick={() => setModal(c)}><MoreHorizontal size={21} /></button><button className="icon-button" title="Delete" onClick={() => remove(c)}><Trash2 size={17} /></button></div></div><Link to={`/courses/${c.id}`} className="course-title">{c.name} <ChevronRight size={17} /></Link><p>{c.exam_count} {c.exam_count === 1 ? 'exam' : 'exams'} · {c.question_count} questions</p><div className="course-card-bottom"><div><span>Average score</span><strong>{fmtScore(c.average_score)}</strong></div><div><span>Last studied</span><strong>{fmtDate(c.last_studied)}</strong></div></div></article>)}</div> : <Empty icon={Search} title="No matching courses" text="Try a different search term." />}</> : <Empty title="No courses yet" text="Create your first course and paste mixed exam questions to start studying." />}{modal && <TextModal title={modal.id ? 'Rename course' : 'Create a course'} label="Course name" initial={modal.name || ''} onClose={() => setModal(null)} onSave={save} busy={busy} />}</>
 }
 
 function ExamCard({ exam, onRename, onDelete }) {
@@ -124,7 +124,7 @@ function sortExams(exams, sort) {
   })
 }
 
-function ExamList({ exams, refresh, emptyTitle = 'No exams yet', emptyText = 'Add your course MCQs to create your first exam.' }) {
+function ExamList({ exams, refresh, emptyTitle = 'No exams yet', emptyText = 'Add your course questions to create your first exam.' }) {
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('newest')
   const [modal, setModal] = useState(null)
@@ -140,7 +140,7 @@ function CourseDetail() {
   const { data, loading, error, refresh } = useData(() => api.course(id), id)
   if (loading) return <Loading />
   if (error) return <ErrorBox message={error} retry={refresh} />
-  return <><Header back="/courses" eyebrow="COURSE LIBRARY" title={data.name} description={`${data.exam_count} exams · ${data.question_count} questions · Average score ${fmtScore(data.average_score)}`} actions={<Link className="button primary" to={`/upload?course=${id}`}><Plus size={17} /> Add exam</Link>} /><div className="course-detail-summary"><div><span>EXAMS</span><strong>{data.exam_count}</strong></div><div><span>QUESTIONS</span><strong>{data.question_count}</strong></div><div><span>AVERAGE SCORE</span><strong>{fmtScore(data.average_score)}</strong></div><div><span>LAST STUDIED</span><strong>{fmtDate(data.last_studied)}</strong></div></div><div className="section-heading spaced"><div><h2>Exams in this course</h2><p>Choose an exam to practice or review.</p></div></div><ExamList exams={data.exams} refresh={refresh} /></>
+  return <><Header back="/courses" eyebrow="COURSE LIBRARY" title={data.name} description={`${data.exam_count} exams · ${data.question_count} questions · Average score ${fmtScore(data.average_score)}`} actions={<Link className="button primary" to={`/upload?course=${id}`}><Plus size={17} /> Add exam</Link>} /><div className="course-detail-summary"><div><span>EXAMS</span><strong>{data.exam_count}</strong></div><div><span>QUESTIONS</span><strong>{data.question_count}</strong></div><div><span>AVERAGE SCORE</span><strong>{fmtScore(data.average_score)}</strong></div><div><span>LAST STUDIED</span><strong>{fmtDate(data.last_studied)}</strong></div></div><div className="section-heading spaced"><div><h2>Exams in this course</h2><p>Practice MCQ, True / False, dropdown blanks, and typed blanks.</p></div></div><ExamList exams={data.exams} refresh={refresh} /></>
 }
 
 function Exams() {
@@ -154,23 +154,30 @@ function ImportPractice({ questions, onSave, busy, canSave }) {
   const orderedQuestions = useMemo(() => questionsByPdfPage(questions), [questions])
   const question = orderedQuestions[position]
   const selected = choices[position]
-  const correct = selected === question.correct_answer
-  const order = 'ABCD'
+  const [checked, setChecked] = useState({})
+  const order = optionOrderForQuestion(question)
+  const state = checked[position]
 
-  function choose(letter) {
-    setChoices(previous => previous[position] ? previous : { ...previous, [position]: letter })
+  function choose(answer) {
+    if (state) return
+    setChoices(previous => ({ ...previous, [position]: answer }))
+    if (!isBlankQuestion(question)) setChecked(previous => ({ ...previous, [position]: gradeAnswer(question, answer) }))
+  }
+  function check() {
+    setChecked(previous => ({ ...previous, [position]: gradeAnswer(question, selected) }))
   }
 
   return <>
     <div className="preview-practice-toolbar">
-      <div><strong>Try a question</strong><p>Choose an answer for instant feedback.</p></div>
+      <div><strong>Try a question</strong><p>Try choices, paragraph dropdowns, and typed blanks before saving.</p></div>
       <label>Jump to <select aria-label="Jump to question" value={position} onChange={event => setPosition(Number(event.target.value))}>{orderedQuestions.map((item, index) => <option key={item.source_id} value={index}>Question {index + 1}{item.pdf_page ? ` · ${pageLabel(item.pdf_page)}` : ''}</option>)}</select></label>
     </div>
     <div className="preview-question preview-practice-question">
       <div className="question-label">QUESTION {position + 1} OF {questions.length}</div>
-      <h3>{question.question_text}</h3>{question.pdf_page && <p className="source-page">{pageLabel(question.pdf_page)}</p>}
-      <div className="answer-options">{order.split('').map((sourceLetter, index) => <button type="button" key={sourceLetter} disabled={!!selected} onClick={() => choose(sourceLetter)} className={`answer-option ${selected === sourceLetter ? 'selected' : ''} ${selected && question.correct_answer === sourceLetter ? 'correct' : ''} ${selected === sourceLetter && !correct ? 'wrong' : ''}`}><span className="option-letter">{'ABCD'[index]}</span><span>{optionText(question, sourceLetter)}</span>{selected && question.correct_answer === sourceLetter && <Check size={18} className="answer-check" />}</button>)}</div>
-      {selected && <div className={`study-feedback ${correct ? 'positive' : 'negative'}`} role="status"><strong>{correct ? 'Correct!' : 'Not quite.'}</strong>{!correct && <p>The correct answer is {displayedLetter(order, question.correct_answer)}: {optionText(question, question.correct_answer)}.</p>}{question.explanation && <p>{question.explanation}</p>}</div>}
+      {question.pdf_page && <p className="source-page">{pageLabel(question.pdf_page)}</p>}
+      <QuestionResponse question={question} answer={selected} order={order} onChange={choose} disabled={!!state} feedback={state} />
+      {isBlankQuestion(question) && !state && <button type="button" className="button primary check-blanks" disabled={!isCompleteAnswer(question, selected)} onClick={check}>Check answers <Check size={16} /></button>}
+      <QuestionFeedback question={question} feedback={state} order={order} />
       <div className="question-footer"><button type="button" className="button secondary" disabled={position === 0} onClick={() => setPosition(value => value - 1)}><ArrowLeft size={16} /> Previous</button><button type="button" className="button secondary" disabled={position === questions.length - 1} onClick={() => setPosition(value => value + 1)}>Next question <ArrowRight size={16} /></button></div>
     </div>
     <div className="save-bar"><p><strong>{questions.length} questions parsed.</strong> {canSave ? 'Save to start a study or exam session.' : 'Fix import errors before saving.'}</p><button className="button primary" disabled={busy || !canSave} onClick={onSave}>{busy ? 'Saving…' : 'Save exam'} <ArrowRight size={17} /></button></div>
@@ -193,7 +200,7 @@ function PromptGuide() {
       .then(() => setMessage('ChatGPT opened. Attach your course PDF before sending. The prompt is also copied if you need to paste it.'))
       .catch(() => setMessage('ChatGPT opened. Attach your course PDF before sending. Use Copy prompt if the message is empty.'))
   }
-  return <div className="panel guide-panel"><div className="guide-icon"><FileText size={23} /></div><h3>Generate MCQs to paste</h3><p className="guide-intro">Attach your course or chapter PDF in ChatGPT. Use this prompt to get all questions in one copyable text block, then paste them here.</p><div className="prompt-actions"><button type="button" className="button secondary prompt-copy-button" onClick={copyPrompt}><Copy size={17} /> Copy prompt</button><a className="button primary prompt-open-button" href={chatUrl} target="_blank" rel="noopener noreferrer" onClick={openChat}><ExternalLink size={17} /> Open ChatGPT</a></div>{message && <p className="prompt-message" role="status">{message}</p>}<p className="prompt-hint">Each question needs a source PDF page, four choices, the correct answer, and an explanation.</p><details className="prompt-details"><summary>Read the full prompt</summary><pre>{mcqPrompt}</pre></details></div>
+  return <div className="panel guide-panel"><div className="guide-icon"><FileText size={23} /></div><h3>Generate a mixed Moodle exam</h3><p className="guide-intro">Attach your course or chapter PDF in ChatGPT. Use this prompt to get all questions in one copyable text block, then paste them here.</p><div className="prompt-actions"><button type="button" className="button secondary prompt-copy-button" onClick={copyPrompt}><Copy size={17} /> Copy prompt</button><a className="button primary prompt-open-button" href={chatUrl} target="_blank" rel="noopener noreferrer" onClick={openChat}><ExternalLink size={17} /> Open ChatGPT</a></div>{message && <p className="prompt-message" role="status">{message}</p>}<p className="prompt-hint">Supports MCQ, True / False, paragraph dropdowns, and typed blanks. The prompt includes the exact import format for each.</p><details className="prompt-details"><summary>Read the full prompt</summary><pre>{mcqPrompt}</pre></details></div>
 }
 
 function UploadExam() {
@@ -231,7 +238,7 @@ function UploadExam() {
     {message && <div className="inline-error" role="alert">{message}</div>}
     {preview.questions.length ? <ImportPractice questions={preview.questions} onSave={save} busy={busy} canSave={!preview.errors.length} /> : <div className="inline-error">No valid questions found. Choose Edit import and check the Q1 format.</div>}
   </div>
-  return <><Header eyebrow="ADD TO YOUR LIBRARY" title="Add a study exam" description="Paste MCQs with source pages and explanations." />
+  return <><Header eyebrow="ADD TO YOUR LIBRARY" title="Add a study exam" description="Paste mixed Moodle-style questions with source pages and explanations." />
     <div className="upload-layout"><section className="panel upload-form-panel"><form onSubmit={parse}>
       <div className="field-heading"><label className="field-label" htmlFor="course">Course</label><button type="button" className="text-button" onClick={() => setCreatingCourse(true)}>+ New course</button></div>
       <select id="course" value={courseId} onChange={event => setCourseId(event.target.value)} required><option value="">{courses.length ? 'Choose a course' : 'Create your first course above'}</option>{courses.map(course => <option key={course.id} value={course.id}>{course.name}</option>)}</select>
@@ -267,10 +274,11 @@ function StartExam() {
   const selectedLimit = sizes.includes(limit) ? limit : 'all'
   return <div className="session-page">
     <Header back={`/courses/${data.course_id}`} eyebrow={data.course_name} title={data.title} description={`${data.question_count} questions in this exam`} />
+    <p className="grading-note">Practice MCQ, True / False, dropdown paragraphs, and typed blanks. Each question is worth one point; complete every blank correctly to earn the paragraph point. Typed answers ignore capitalization and extra spaces.</p>
     <form className="session-builder panel" onSubmit={event => { event.preventDefault(); begin(studyMode) }}>
       <fieldset className="mode-choices"><legend>How would you like to practice?</legend>
         <label className={`mode-choice ${studyMode === 'study' ? 'active' : ''}`}><input type="radio" name="mode" value="study" checked={studyMode === 'study'} onChange={() => setStudyMode('study')} /><BookOpen size={23} /><span><strong>Study</strong><small>Follow PDF page order with feedback after every answer.</small></span></label>
-        <label className={`mode-choice ${studyMode === 'exam' ? 'active' : ''}`}><input type="radio" name="mode" value="exam" checked={studyMode === 'exam'} onChange={() => setStudyMode('exam')} /><Target size={23} /><span><strong>Exam</strong><small>Shuffled questions and choices; results at the end.</small></span></label>
+        <label className={`mode-choice ${studyMode === 'exam' ? 'active' : ''}`}><input type="radio" name="mode" value="exam" checked={studyMode === 'exam'} onChange={() => setStudyMode('exam')} /><Target size={23} /><span><strong>Exam</strong><small>Mixed question types, shuffled questions and choices; results at the end.</small></span></label>
       </fieldset>
       <div className="session-length"><div><label htmlFor="session-length">Session length</label><p>{studyMode === 'study' ? 'Study from the first source page, in order.' : 'Short exams sample from across the course.'}</p></div><select id="session-length" value={selectedLimit} onChange={event => setLimit(event.target.value === 'all' ? 'all' : Number(event.target.value))}>{sizes.map(size => <option key={size} value={size}>{size} questions</option>)}<option value="all">All {data.question_count} questions</option></select></div>
       <div className="session-launch"><span><CheckCircle2 size={16} /> {studyMode === 'study' ? 'PDF page order' : 'Shuffled questions and choices'} · No timer</span><button className="button primary">{studyMode === 'study' ? 'Start studying' : 'Start exam'} <ArrowRight size={18} /></button></div>
@@ -297,25 +305,26 @@ function TakeExam() {
     const selected = subset.map(questionId => byId.get(questionId)).filter(Boolean)
     return questionsForMode(selected, mode)
   }, [data, params.toString(), mode])
-  const optionOrders = useMemo(() => Object.fromEntries(questions.map(question => [question.id, mode === 'exam' ? shuffledOptionOrder() : 'ABCD'])), [questions, mode])
+  const optionOrders = useMemo(() => Object.fromEntries(questions.map(question => [question.id, optionOrderForQuestion(question, mode === 'exam')])), [questions, mode])
   const q = questions[position]
-  const currentOrder = q ? optionOrders[q.id] : 'ABCD'
+  const currentOrder = q ? optionOrders[q.id] : ''
   const selected = q ? answers[q.id] : null
-  const answered = questions.filter(question => answers[question.id]).length
-  async function choose(letter) {
-    if (busy || (mode === 'study' && selected)) return
-    setAnswers(old => ({ ...old, [q.id]: letter }))
-    if (mode !== 'study') return
+  const answered = questions.filter(question => isCompleteAnswer(question, answers[question.id])).length
+  const started = questions.some(question => hasAnswer(question, answers[question.id]))
+  async function checkAnswer(answer) {
     setBusy(true); setMessage('')
-    try { const result = await api.check(id, q.id, letter); setChecked(old => ({ ...old, [q.id]: result })) }
-    catch (e) {
-      setAnswers(old => { const next = { ...old }; delete next[q.id]; return next })
-      setMessage(e.message)
-    } finally { setBusy(false) }
+    try { const result = await api.check(id, q.id, answer); setChecked(old => ({ ...old, [q.id]: result })) }
+    catch (e) { setMessage(e.message) }
+    finally { setBusy(false) }
+  }
+  function choose(answer) {
+    if (busy || checked[q.id]) return
+    setAnswers(old => ({ ...old, [q.id]: answer }))
+    if (mode === 'study' && !isBlankQuestion(q)) checkAnswer(answer)
   }
   async function submit() {
     const missing = questions.length - answered
-    if (missing && !window.confirm(`${missing} ${missing === 1 ? 'question is' : 'questions are'} unanswered. Submit anyway?`)) return
+    if (missing && !window.confirm(`${missing} ${missing === 1 ? 'question is' : 'questions are'} incomplete. Submit anyway?`)) return
     setBusy(true); setMessage('')
     try { const result = await api.submit(id, { mode, question_ids: questions.map(item => item.id), answers, option_orders: optionOrders }); navigate(`/attempts/${result.id}`) } catch (e) { setMessage(e.message); setBusy(false) }
   }
@@ -324,23 +333,20 @@ function TakeExam() {
   if (!questions.length) return <ErrorBox message="No questions were found for this practice session." />
   const state = checked[q.id]
   return <div className="focus-exam">
-    <header className="focus-top"><Link className="back-link" to={`/exams/${id}/start`} onClick={event => { if (answered && !window.confirm('Leave this session? Your unfinished answers will not be saved.')) event.preventDefault() }}><ArrowLeft size={18} /> Exit</Link><span className="mode-badge">{mode === 'study' ? 'Study session' : 'Practice exam'}</span><button className="button secondary finish-session" disabled={busy} onClick={submit}>{busy ? 'Saving…' : 'Finish session'} <Check size={17} /></button></header>
+    <header className="focus-top"><Link className="back-link" to={`/exams/${id}/start`} onClick={event => { if (started && !window.confirm('Leave this session? Your unfinished answers will not be saved.')) event.preventDefault() }}><ArrowLeft size={18} /> Exit</Link><span className="mode-badge">{mode === 'study' ? 'Study session' : 'Practice exam'}</span><button className="button secondary finish-session" disabled={busy} onClick={submit}>{busy ? 'Saving…' : 'Finish session'} <Check size={17} /></button></header>
     <div className="focus-heading"><p className="eyebrow">{data.course_name}</p><h1>{data.title}</h1></div>
     <div className="session-progress"><span><strong>{answered}</strong> of {questions.length} answered</span><span>{Math.round(answered / questions.length * 100)}%</span></div><div className="exam-progress" role="progressbar" aria-label="Questions answered" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={answered}><span style={{ width: `${answered / questions.length * 100}%` }} /></div>
     <section className="question-panel focus-question" aria-labelledby="active-question">
-      <div className="question-label">QUESTION {position + 1} <span>OF {questions.length}</span></div><h2 id="active-question">{q.question_text}</h2>{q.pdf_page && <p className="source-page">{pageLabel(q.pdf_page)}</p>}
-      <div className="answer-options" aria-label="Answer choices">{currentOrder.split('').map((sourceLetter, index) => {
-        const isSelected = selected === sourceLetter
-        const isCorrect = state?.correct_answer === sourceLetter
-        return <button type="button" aria-pressed={isSelected} disabled={busy || !!state} className={`answer-option ${isSelected ? 'selected' : ''} ${state && isCorrect ? 'correct' : ''} ${state && isSelected && !isCorrect ? 'wrong' : ''}`} key={sourceLetter} onClick={() => choose(sourceLetter)}><span className="option-letter">{'ABCD'[index]}</span><span className="option-content">{optionText(q, sourceLetter)}</span><span className="choice-indicator" aria-hidden="true">{state && isSelected && !isCorrect ? <X size={17} /> : (isSelected || (state && isCorrect)) ? <Check size={17} /> : null}</span></button>
-      })}</div>
-      {mode === 'study' && state && <div className={`study-feedback ${state.is_correct ? 'positive' : 'negative'}`} role="status"><span className="feedback-icon">{state.is_correct ? <CheckCircle2 size={22} /> : <CircleHelp size={22} />}</span><div><strong>{state.is_correct ? 'Correct — well done.' : 'Not quite. Keep learning.'}</strong>{!state.is_correct && <p>The answer is {displayedLetter(currentOrder, state.correct_answer)}: {optionText(q, state.correct_answer)}</p>}{q.explanation && <p>{q.explanation}</p>}</div></div>}
-      {!state && <p className="answer-hint">{mode === 'study' ? 'Choose an answer to check your understanding.' : 'You can change your answer before finishing.'}</p>}
+      <div className="question-label">QUESTION {position + 1} <span>OF {questions.length}</span></div>{q.pdf_page && <p className="source-page">{pageLabel(q.pdf_page)}</p>}
+      <QuestionResponse question={q} answer={selected} order={currentOrder} onChange={choose} disabled={busy || !!state} feedback={state} headingId="active-question" />
+      {mode === 'study' && isBlankQuestion(q) && !state && <button type="button" className="button primary check-blanks" disabled={busy || !isCompleteAnswer(q, selected)} onClick={() => checkAnswer(selected)}>Check answers <Check size={16} /></button>}
+      <QuestionFeedback question={q} feedback={state} order={currentOrder} />
+      {!state && <p className="answer-hint">{isBlankQuestion(q) ? `Complete every blank in the paragraph.${mode === 'study' ? ' Then choose Check answers.' : ' You can change answers before finishing.'}` : mode === 'study' ? 'Choose an answer to check your understanding.' : 'You can change your answer before finishing.'}</p>}
       {message && <div className="inline-error" role="alert">{message}</div>}
       <footer className="question-footer"><button className="button secondary" disabled={position === 0 || busy} onClick={() => setPosition(value => value - 1)}><ArrowLeft size={17} /> Previous</button><span>{position + 1} / {questions.length}</span><button className="button primary" disabled={position === questions.length - 1 || busy} onClick={() => setPosition(value => value + 1)}>Next <ArrowRight size={17} /></button></footer>
     </section>
     {answered === questions.length && <p className="session-complete"><CheckCircle2 size={17} /> All questions answered. Choose Finish session to save your results.</p>}
-    <details className="focus-overview"><summary><span>Question overview</span><span>{questions.length - answered} unanswered <ChevronRight size={16} /></span></summary><div className="question-grid">{questions.map((item, index) => <button type="button" key={item.id} disabled={busy} aria-label={`Go to question ${index + 1}, ${answers[item.id] ? 'answered' : 'unanswered'}`} aria-current={index === position ? 'step' : undefined} className={`${index === position ? 'current' : ''} ${answers[item.id] ? 'answered' : ''}`} onClick={event => { setPosition(index); event.currentTarget.closest('details').open = false }}>{index + 1}</button>)}</div></details>
+    <details className="focus-overview"><summary><span>Question overview</span><span>{questions.length - answered} incomplete <ChevronRight size={16} /></span></summary><div className="question-grid">{questions.map((item, index) => <button type="button" key={item.id} disabled={busy} aria-label={`Go to question ${index + 1}, ${isCompleteAnswer(item, answers[item.id]) ? 'answered' : 'incomplete'}`} aria-current={index === position ? 'step' : undefined} className={`${index === position ? 'current' : ''} ${isCompleteAnswer(item, answers[item.id]) ? 'answered' : ''}`} onClick={event => { setPosition(index); event.currentTarget.closest('details').open = false }}>{index + 1}</button>)}</div></details>
   </div>
 }
 
@@ -360,7 +366,31 @@ function Review() {
   if (loading) return <Loading />
   if (error) return <ErrorBox message={error} retry={refresh} />
   const questions = attemptId ? data.answers : data.questions
-  return <><Header back={attemptId ? `/attempts/${attemptId}` : `/courses/${data.course_id}`} eyebrow="ANSWER REVIEW" title={data.exam_title || data.title} description={attemptId ? `Your attempt on ${fmtDate(data.completed_at)} · ${data.score}/${data.total_questions} correct` : 'Explore the answer key before your next practice session.'} actions={<Link className="button primary" to={`/exams/${data.exam_id || data.id}/start`}>Try exam <ArrowRight size={16} /></Link>} /><div className="review-list">{questions.map((q, index) => <article className="review-card" key={q.id}><div className="review-head"><span>QUESTION {index + 1}</span>{attemptId && <span className={`review-status ${q.is_correct ? 'right' : q.selected_answer ? 'wrong' : 'skipped'}`}>{q.is_correct ? 'Correct' : q.selected_answer ? 'Incorrect' : 'Unanswered'}</span>}</div><h3>{q.question_text}</h3>{q.pdf_page && <p className="source-page">{pageLabel(q.pdf_page)}</p>}<div className="review-options">{'ABCD'.split('').map(letter => <div key={letter} className={`${q.correct_answer === letter ? 'right' : ''} ${q.selected_answer === letter && !q.is_correct ? 'wrong' : ''}`}><span className="option-letter">{letter}</span><span>{optionText(q, letter)}</span>{q.correct_answer === letter && <span className="answer-tag"><Check size={14} /> Correct answer</span>}{q.selected_answer === letter && q.correct_answer !== letter && <span className="answer-tag">Your answer</span>}</div>)}</div>{q.explanation && <p className="review-explanation"><strong>Explanation:</strong> {q.explanation}</p>}{attemptId && !q.selected_answer && <p className="review-note">You left this question unanswered.</p>}</article>)}</div></>
+  return <><Header back={attemptId ? `/attempts/${attemptId}` : `/courses/${data.course_id}`} eyebrow="ANSWER REVIEW" title={data.exam_title || data.title} description={attemptId ? `Your attempt on ${fmtDate(data.completed_at)} · ${data.score}/${data.total_questions} correct` : 'Explore the answer key before your next practice session.'} actions={<Link className="button primary" to={`/exams/${data.exam_id || data.id}/start`}>Try exam <ArrowRight size={16} /></Link>} />
+    <p className="grading-note">Each question is worth one point. Paragraph questions need every blank correct. Typed answers ignore capitalization and extra spaces; accepted alternatives appear below.</p>
+    <div className="review-list">{questions.map((q, index) => {
+      const responded = hasAnswer(q, q.selected_answer)
+      return <article className="review-card" key={q.id}>
+        <div className="review-head"><span>QUESTION {index + 1} · {TYPE_LABELS[q.type] || 'Multiple choice'}</span>{attemptId && <span className={`review-status ${q.is_correct ? 'right' : responded ? 'wrong' : 'skipped'}`}>{q.is_correct ? 'Correct' : responded ? 'Incorrect' : 'Unanswered'}</span>}</div>
+        {q.pdf_page && <p className="source-page">{pageLabel(q.pdf_page)}</p>}
+        {isBlankQuestion(q) ? <>
+          <p className="review-paragraph">{q.question_text.replace(/\[\[(\d+)\]\]/g, (_, id) => ` [Blank ${id}] `)}</p>
+          <div className="blank-review-list">{q.blanks.map(blank => {
+            const value = q.selected_answer?.[blank.id]
+            const correct = gradeAnswer(blank, value).is_correct
+            return <div key={blank.id} className={`blank-review ${attemptId ? correct ? 'right' : 'wrong' : ''}`}>
+              <strong>Blank {blank.id} · {blank.type === 'MCQ' ? 'Dropdown' : 'Typed answer'}</strong>
+              {attemptId && <p>Your answer: {answerDescription(blank, value)} {correct ? '✓' : '✗'}</p>}
+              <p>Correct answer{blank.accepted_answers?.length > 1 ? 's' : ''}: {correctDescription(blank)}</p>
+              {blank.type === 'MCQ' && <p className="blank-choice-key">Choices: {choiceLetters(blank).map(letter => `${letter}. ${optionText(blank, letter)}`).join(' · ')}</p>}
+            </div>
+          })}</div>
+        </> : <><h3>{q.question_text}</h3><div className="review-options">{choiceLetters(q).map(letter => <div key={letter} className={`${q.correct_answer === letter ? 'right' : ''} ${q.selected_answer === letter && !q.is_correct ? 'wrong' : ''}`}><span className="option-letter">{letter}</span><span>{optionText(q, letter)}</span>{q.correct_answer === letter && <span className="answer-tag"><Check size={14} /> Correct answer</span>}{q.selected_answer === letter && q.correct_answer !== letter && <span className="answer-tag">Your answer</span>}</div>)}</div></>}
+        {q.explanation && <p className="review-explanation"><strong>Explanation:</strong> {q.explanation}</p>}
+        {attemptId && !responded && <p className="review-note">You left this question unanswered.</p>}
+      </article>
+    })}</div></>
+
 }
 
 function HistoryPage() {

@@ -1,25 +1,11 @@
-import { parseText } from './questionParser'
-import { isOptionOrder, questionForDisplay } from './questionOrder'
+import { parseText } from './questionParser.js'
+import { isQuestionOptionOrder, questionForDisplay } from './questionOrder.js'
+import { gradeAnswer, hasAnswer, publicQuestion } from './questionModel.js'
+import { mergeWorkspaces } from './workspaceMigration.js'
 
 const DATABASE = 'quizflow-local'
 const STORE = 'workspace'
-export const PROFILES = [
-  { id: 'mahmoud', name: 'Mahmoud', initial: 'M' },
-  { id: 'amer', name: 'Amer', initial: 'A' },
-]
-let activeProfile = null
 let writeQueue = Promise.resolve()
-
-export function setActiveProfile(id) {
-  if (id !== null && !PROFILES.some(profile => profile.id === id)) throw new Error('Choose a valid profile.')
-  activeProfile = id
-}
-
-function workspaceRecord() {
-  if (!activeProfile) throw new Error('Choose a profile to open your workspace.')
-  // Keep the existing workspace intact: all pre-profile data belongs to Mahmoud.
-  return activeProfile === 'mahmoud' ? 'data' : 'profile:amer'
-}
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -30,34 +16,38 @@ function openDatabase() {
   })
 }
 
-async function read(record = workspaceRecord()) {
+async function read() {
   const db = await openDatabase()
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE, 'readonly')
-    const request = transaction.objectStore(STORE).get(record)
-    request.onsuccess = () => resolve(request.result || { courses: [], exams: [], attempts: [], nextId: 1 })
-    request.onerror = () => reject(new Error('Could not read your browser workspace.'))
-    transaction.oncomplete = () => db.close()
+    // One transaction makes first-open migration safe even with multiple tabs.
+    const transaction = db.transaction(STORE, 'readwrite')
+    const store = transaction.objectStore(STORE)
+    const shared = store.get('shared'), first = store.get('data'), second = store.get('profile:amer')
+    let result
+    second.onsuccess = () => {
+      result = shared.result || mergeWorkspaces([first.result, second.result])
+      if (!shared.result) store.put(result, 'shared')
+    }
+    transaction.oncomplete = () => { db.close(); resolve(result) }
+    transaction.onabort = () => { db.close(); reject(new Error('Could not read your browser workspace.')) }
   })
 }
 
-async function write(data, record) {
+async function write(data) {
   const db = await openDatabase()
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE, 'readwrite')
-    transaction.objectStore(STORE).put(data, record)
+    transaction.objectStore(STORE).put(data, 'shared')
     transaction.oncomplete = () => { db.close(); resolve() }
     transaction.onerror = () => { db.close(); reject(new Error('Could not save to this browser. Check its storage settings or available space.')) }
   })
 }
 
 function change(update) {
-  // Capture before queuing so switching profiles cannot redirect pending writes.
-  const record = workspaceRecord()
   const result = writeQueue.then(async () => {
-    const data = await read(record)
+    const data = await read()
     const answer = update(data)
-    await write(data, record)
+    await write(data)
     return answer
   })
   writeQueue = result.catch(() => {})
@@ -120,7 +110,7 @@ export const api = {
   renameCourse: (id, name) => change(data => { if (!name.trim()) fail('Enter a course name.'); const course = requiredCourse(data, id); course.name = name.trim(); return course }),
   deleteCourse: id => change(data => { requiredCourse(data, id); const examIds = new Set(data.exams.filter(exam => exam.course_id === Number(id)).map(exam => exam.id)); data.attempts = data.attempts.filter(attempt => !examIds.has(attempt.exam_id)); data.exams = data.exams.filter(exam => !examIds.has(exam.id)); data.courses = data.courses.filter(course => course.id !== Number(id)) }),
   exams: async () => { const data = await read(); return [...data.exams].sort((a, b) => b.created_at.localeCompare(a.created_at)).map(exam => examSummary(data, exam)) },
-  exam: async id => { const data = await read(); const exam = requiredExam(data, id); return { ...examSummary(data, exam), questions: exam.questions.map(({ correct_answer, ...question }) => question) } },
+  exam: async id => { const data = await read(); const exam = requiredExam(data, id); return { ...examSummary(data, exam), questions: exam.questions.map(publicQuestion) } },
   examReview: async id => { const data = await read(); const exam = requiredExam(data, id); return { ...examSummary(data, exam), questions: exam.questions } },
   renameExam: (id, title) => change(data => { if (!title.trim()) fail('Enter an exam title.'); const exam = requiredExam(data, id); exam.title = title.trim(); return { id: exam.id, title: exam.title } }),
   deleteExam: id => change(data => { requiredExam(data, id); data.exams = data.exams.filter(exam => exam.id !== Number(id)); data.attempts = data.attempts.filter(attempt => attempt.exam_id !== Number(id)) }),
@@ -135,19 +125,19 @@ export const api = {
     data.exams.push(exam)
     return { id: exam.id, course_id: exam.course_id, title: exam.title }
   }),
-  check: async (id, questionId, selectedAnswer) => { const data = await read(); const question = requiredExam(data, id).questions.find(item => item.id === Number(questionId)) || fail('Question not found in this exam.'); return { correct_answer: question.correct_answer, is_correct: selectedAnswer === question.correct_answer } },
+  check: async (id, questionId, selectedAnswer) => { const data = await read(); const question = requiredExam(data, id).questions.find(item => item.id === Number(questionId)) || fail('Question not found in this exam.'); return { ...gradeAnswer(question, selectedAnswer), answer_description: question.blanks ? undefined : question[`option_${question.correct_answer?.toLowerCase()}`] } },
   submit: (id, payload) => change(data => {
     const exam = requiredExam(data, id)
     const questions = new Map(exam.questions.map(question => [question.id, question]))
     const ids = payload.question_ids.map(Number)
     if (!ids.length || ids.length !== new Set(ids).size || ids.some(qid => !questions.has(qid))) fail('The selected questions do not belong to this exam.')
     if (Object.keys(payload.answers).some(qid => !ids.includes(Number(qid)))) fail('An answer refers to a question outside this attempt.')
-    if (payload.option_orders && ids.some(qid => !isOptionOrder(payload.option_orders[qid]))) fail('The answer order for this attempt is invalid.')
+    if (payload.option_orders && ids.some(qid => !isQuestionOptionOrder(questions.get(qid), payload.option_orders[qid]))) fail('The answer order for this attempt is invalid.')
     const answers = ids.map(qid => ({ question_id: qid, selected_answer: payload.answers[qid] || null,
-      is_correct: payload.answers[qid] === questions.get(qid).correct_answer,
+      is_correct: gradeAnswer(questions.get(qid), payload.answers[qid]).is_correct,
       option_order: payload.option_orders?.[qid] || null }))
     const correct = answers.filter(answer => answer.is_correct).length
-    const unanswered = answers.filter(answer => !answer.selected_answer).length
+    const unanswered = answers.filter(answer => !hasAnswer(questions.get(answer.question_id), answer.selected_answer)).length
     const attempt = { id: nextId(data), exam_id: exam.id, mode: payload.mode, score: correct,
       total_questions: ids.length, percentage: Math.round(correct / ids.length * 1000) / 10,
       correct_count: correct, wrong_count: ids.length - correct - unanswered,
